@@ -60,12 +60,28 @@ class AppController {
   }
 
   static #bindLogin() {
-    document.getElementById('login-form').addEventListener('submit', async e => {
+    const form   = document.getElementById('login-form');
+    const btn    = document.getElementById('login-submit-btn');
+    const errEl  = document.getElementById('login-error');
+
+    form.addEventListener('submit', async e => {
       e.preventDefault();
-      const name  = document.getElementById('login-name').value.trim();
-      const email = document.getElementById('login-email').value.trim();
-      const user  = await UserModel.login(name, email);
-      this.#showApp(user);
+      btn.disabled    = true;
+      btn.textContent = '연결 중...';
+      errEl.classList.add('hidden');
+      try {
+        const name  = document.getElementById('login-name').value.trim();
+        const email = document.getElementById('login-email').value.trim();
+        const user  = await UserModel.login(name, email);
+        this.#showApp(user);
+      } catch (err) {
+        console.error('Login error:', err);
+        errEl.textContent = `연결 실패: ${err.message}`;
+        errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = '시작하기';
+      }
     });
   }
 

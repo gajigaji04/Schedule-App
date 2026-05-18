@@ -13,13 +13,15 @@ class UserModel {
   }
 
   static async login(name, email) {
-    const { data: existing } = await db
+    const { data: existing, error: findErr } = await db
       .from('users').select('*').eq('email', email).maybeSingle();
+    if (findErr) throw new Error(findErr.message);
 
     if (existing) {
       if (existing.name !== name) {
-        const { data } = await db
+        const { data, error: updErr } = await db
           .from('users').update({ name }).eq('id', existing.id).select().single();
+        if (updErr) throw new Error(updErr.message);
         this.#setCurrent(data);
         return data;
       }
@@ -27,12 +29,13 @@ class UserModel {
       return existing;
     }
 
-    const { data } = await db.from('users').insert({
+    const { data, error: insErr } = await db.from('users').insert({
       id:       'u_' + Date.now(),
       name,
       email,
       team_ids: [],
     }).select().single();
+    if (insErr) throw new Error(insErr.message);
     this.#setCurrent(data);
     return data;
   }

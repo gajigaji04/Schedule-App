@@ -1268,6 +1268,7 @@ a { text-decoration: none; }
 .login-logo i { font-size: 2.8rem; color: var(--indigo-600); }
 .login-logo h1 { font-size: 1.6rem; font-weight: 800; color: var(--slate-800); }
 .login-sub { text-align: center; color: var(--slate-500); margin-bottom: 28px; font-size: 0.9rem; }
+.login-error { color: #ef4444; font-size: 0.85rem; margin-top: 10px; text-align: center; }
 
 /* ============================================================
    DARK THEME

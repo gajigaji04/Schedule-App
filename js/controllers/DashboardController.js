@@ -10,18 +10,19 @@ class DashboardController {
     const todayStr = CalendarView.toDateStr(now);
 
     this.#renderGreeting(now, user);
+
+    // 버튼/칩은 DB 결과를 기다리지 않고 즉시 바인딩
+    document.getElementById('today-chip').textContent =
+      `${now.getMonth() + 1}/${now.getDate()}`;
+    document.getElementById('dash-add-btn').onclick =
+      () => TaskController.openAddModal(todayStr);
+
     await Promise.all([
       this.#renderStats(todayStr),
       this.#renderTodayTasks(todayStr),
       this.#renderMiniCalendar(),
     ]);
     this.#bindMiniNav();
-
-    document.getElementById('today-chip').textContent =
-      `${now.getMonth() + 1}/${now.getDate()}`;
-
-    document.getElementById('dash-add-btn').onclick =
-      () => TaskController.openAddModal(todayStr);
   }
 
   // ---------- private ----------

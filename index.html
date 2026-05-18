@@ -11,12 +11,12 @@
     />
   </head>
   <body>
-    <!-- Supabase DB 연결 -->
-    <script src="https://rkykmlnlhuuveowvcpfg.supabase.co"></script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 환경변수 (js/config.js는 .gitignore에 등록 — 절대 커밋하지 마세요) -->
+    <script src="js/config.js"></script>
     <script>
       const { createClient } = supabase;
-      const SUPABASE_URL = process.env.SUPABASE_URL;
-      const SUPABASE_KEY = process.env.SUPABASE_KEY; // ← Project Settings → API → anon public 키로 교체
       const db = createClient(SUPABASE_URL, SUPABASE_KEY);
     </script>
 
@@ -47,7 +47,8 @@
               required
             />
           </div>
-          <button type="submit" class="btn-primary btn-full">시작하기</button>
+          <button type="submit" class="btn-primary btn-full" id="login-submit-btn">시작하기</button>
+          <p id="login-error" class="login-error hidden"></p>
         </form>
       </div>
     </div>
