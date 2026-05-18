@@ -17,6 +17,34 @@ class CalendarView {
     return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
   }
 
+  // ---------- helpers ----------
+  static #priorityColor(priority) {
+    return priority === 'high' ? '#ef4444'
+         : priority === 'low'  ? '#22c55e'
+         :                       '#6366f1';
+  }
+
+  // 주(week) 단위로 각 스팬 태스크의 레인(행) 번호를 사전 계산한다.
+  // Returns: { [taskId]: { [weekIndex]: laneNumber } }
+  static #computeSpanLanes(tasks, year, month, startDow) {
+    const spanTasks = tasks.filter(t => t.deadline && t.deadline > t.date);
+    const lanes = {};
+
+    for (let w = 0; w < 6; w++) {
+      const ws = this.toDateStr(new Date(year, month, 1 - startDow + w * 7));
+      const we = this.toDateStr(new Date(year, month, 1 - startDow + w * 7 + 6));
+
+      spanTasks
+        .filter(t => t.date <= we && t.deadline >= ws)
+        .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
+        .forEach((t, lane) => {
+          if (!lanes[t.id]) lanes[t.id] = {};
+          lanes[t.id][w] = lane;
+        });
+    }
+    return lanes;
+  }
+
   // ---------- mini calendar (dashboard) ----------
   static renderMini(container, year, month, tasks, onDateClick) {
     const todayStr = this.toDateStr(new Date());
@@ -25,23 +53,19 @@ class CalendarView {
 
     let html = `<div class="mini-grid">`;
 
-    // Day headers
     this.DAYS.forEach(d => {
       html += `<div class="day-hdr">${d}</div>`;
     });
 
-    // Leading empty cells
     for (let i = 0; i < firstDay.getDay(); i++) {
       html += `<div class="mini-cell other"></div>`;
     }
 
-    // Day cells
     for (let day = 1; day <= lastDay.getDate(); day++) {
       const dateStr  = this.toDateStr(new Date(year, month, day));
       const dayTasks = tasks.filter(t => t.date === dateStr);
       const isToday  = dateStr === todayStr;
-
-      const dots = dayTasks.slice(0, 3).map(() => `<div class="mini-dot"></div>`).join('');
+      const dots     = dayTasks.slice(0, 3).map(() => `<div class="mini-dot"></div>`).join('');
 
       html += `
         <div class="mini-cell ${isToday ? 'today' : ''}" data-date="${dateStr}">
@@ -50,7 +74,6 @@ class CalendarView {
         </div>`;
     }
 
-    // Trailing empty cells
     const totalCells = firstDay.getDay() + lastDay.getDate();
     const trailing   = (7 - (totalCells % 7)) % 7;
     for (let i = 0; i < trailing; i++) {
@@ -70,42 +93,79 @@ class CalendarView {
     const todayStr = this.toDateStr(new Date());
     const firstDay = new Date(year, month, 1);
     const lastDay  = new Date(year, month + 1, 0);
+    const startDow = firstDay.getDay();
+
+    const spanLanes = this.#computeSpanLanes(tasks, year, month, startDow);
 
     let html = `<div class="full-grid">`;
 
-    // Column headers
+    // 요일 헤더
     html += `<div class="cal-hdr-row">`;
     this.DAYS.forEach(d => { html += `<div class="cal-hdr-cell">${d}</div>`; });
     html += `</div>`;
 
-    // Leading prev-month cells
+    // 이전 달 빈 셀
     const prevLast = new Date(year, month, 0).getDate();
     for (let i = firstDay.getDay() - 1; i >= 0; i--) {
       html += `<div class="full-cell other-month"><div class="cell-num">${prevLast - i}</div></div>`;
     }
 
-    // Current month cells
+    // 이번 달 셀
     for (let day = 1; day <= lastDay.getDate(); day++) {
-      const dateStr  = this.toDateStr(new Date(year, month, day));
-      const dayTasks = tasks.filter(t => t.date === dateStr);
-      const isToday  = dateStr === todayStr;
+      const dateStr = this.toDateStr(new Date(year, month, day));
+      const isToday = dateStr === todayStr;
+      const wIdx    = Math.floor((startDow + day - 1) / 7);
 
-      const taskHtml = dayTasks.slice(0, 3).map(t => {
+      // ── 스팬 바 (시작일~마감일이 다른 다일 태스크) ──
+      const spanHere = tasks.filter(t =>
+        t.deadline && t.deadline > t.date &&
+        t.date <= dateStr && t.deadline >= dateStr
+      );
+      const maxLane = spanHere.reduce(
+        (m, t) => Math.max(m, spanLanes[t.id]?.[wIdx] ?? 0), -1
+      );
+
+      let spanBarsHtml = '';
+      if (maxLane >= 0) {
+        spanBarsHtml = '<div class="cell-span-bars">';
+        for (let lane = 0; lane <= maxLane; lane++) {
+          const t = spanHere.find(t => (spanLanes[t.id]?.[wIdx] ?? -1) === lane);
+          if (t) {
+            const isStart = t.date === dateStr;
+            const isEnd   = t.deadline === dateStr;
+            const cls = isStart && isEnd ? 'span-solo'
+                      : isStart          ? 'span-start'
+                      : isEnd            ? 'span-end'
+                      :                    'span-mid';
+            const bg  = t.color || this.#priorityColor(t.priority);
+            const lbl = isStart ? t.title : '';
+            spanBarsHtml += `<div class="span-bar ${cls}" data-task-id="${t.id}" style="background:${bg}" title="${t.title}">${lbl}</div>`;
+          } else {
+            spanBarsHtml += `<div class="span-empty"></div>`;
+          }
+        }
+        spanBarsHtml += '</div>';
+      }
+
+      // ── 단일 태스크 칩 (deadline 없거나 당일 마감) ──
+      const singleTasks = tasks.filter(t =>
+        t.date === dateStr && !(t.deadline && t.deadline > t.date)
+      );
+      const taskHtml = singleTasks.slice(0, 3).map(t => {
         const dl = NotificationService.getDeadlineInfo(t);
-        // 커스텀 색상: 배경 틴트 + 왼쪽 테두리 + 텍스트 색상
         const colorStyle = t.color
           ? `style="background:${t.color}18; border-left:3px solid ${t.color}; color:${t.color}"`
           : '';
-        const colorClass = t.color ? '' : t.priority; // 커스텀 색상이 있으면 priority 클래스 색상 제거
+        const colorClass = t.color ? '' : t.priority;
         return `
-          <div class="cell-task ${colorClass} ${t.completed ? 'done' : ''} ${t.teamId ? 'shared' : ''}"
+          <div class="cell-task ${colorClass} ${t.completed ? 'done' : ''} ${t.team_id ? 'shared' : ''}"
                data-task-id="${t.id}" title="${t.title}" ${colorStyle}>
             ${t.title}${dl ? ` <span class="cell-dl ${dl.cls}">${dl.label}</span>` : ''}
           </div>`;
       }).join('');
 
-      const more = dayTasks.length > 3
-        ? `<div class="more-label">+${dayTasks.length - 3}개 더</div>`
+      const more = singleTasks.length > 3
+        ? `<div class="more-label">+${singleTasks.length - 3}개 더</div>`
         : '';
 
       html += `
@@ -116,11 +176,12 @@ class CalendarView {
               <i class="fas fa-plus"></i>
             </button>
           </div>
+          ${spanBarsHtml}
           <div class="cell-tasks">${taskHtml}${more}</div>
         </div>`;
     }
 
-    // Trailing next-month cells
+    // 다음 달 빈 셀
     const used     = firstDay.getDay() + lastDay.getDate();
     const trailing = (7 - (used % 7)) % 7;
     for (let i = 1; i <= trailing; i++) {
@@ -130,7 +191,7 @@ class CalendarView {
     html += `</div>`;
     container.innerHTML = html;
 
-    // "+" 버튼 클릭 → 해당 날짜로 할일 추가 모달 직접 오픈
+    // "+" 버튼
     container.querySelectorAll('.cell-add-btn').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
@@ -138,17 +199,19 @@ class CalendarView {
       });
     });
 
-    // Date click → open day panel ("+", task 칩 클릭은 제외)
+    // 날짜 셀 클릭 → 데이 패널
     container.querySelectorAll('.full-cell[data-date]').forEach(cell => {
       cell.addEventListener('click', e => {
-        if (!e.target.closest('.cell-task') && !e.target.closest('.cell-add-btn')) {
+        if (!e.target.closest('.cell-task') &&
+            !e.target.closest('.cell-add-btn') &&
+            !e.target.closest('.span-bar')) {
           onDateClick(cell.dataset.date);
         }
       });
     });
 
-    // Task chip click → open edit modal
-    container.querySelectorAll('.cell-task').forEach(el => {
+    // 태스크 칩·스팬 바 클릭 → 수정 모달
+    container.querySelectorAll('.cell-task, .span-bar').forEach(el => {
       el.addEventListener('click', e => {
         e.stopPropagation();
         TaskController.openEditModal(el.dataset.taskId);

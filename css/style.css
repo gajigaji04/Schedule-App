@@ -575,24 +575,6 @@ a { text-decoration: none; }
 .task-desc-text { font-size: 0.82rem; color: var(--slate-500); margin-bottom: 6px; }
 .task-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 
-/* 마감일 잔여시간 바 */
-.dl-bar-wrap {
-  margin-top: 7px;
-  height: 4px;
-  background: var(--border);
-  border-radius: 99px;
-  overflow: hidden;
-}
-.dl-bar {
-  height: 100%;
-  border-radius: 99px;
-  transition: width 0.4s ease;
-}
-.dl-bar-safe { background: #22c55e; }
-.dl-bar-warn { background: #f59e0b; }
-.dl-bar-near { background: #f97316; }
-.dl-bar-due  { background: #ef4444; }
-.task-item.completed .dl-bar-wrap { display: none; }
 
 .priority-tag {
   padding: 2px 8px;
@@ -871,7 +853,7 @@ a { text-decoration: none; }
   padding: 6px;
   cursor: pointer;
   transition: background var(--transition);
-  overflow: hidden;
+  position: relative;
 }
 .full-cell:nth-child(7n) { border-right: none; }
 .full-cell:hover { background: #fafbff; }
@@ -933,7 +915,44 @@ a { text-decoration: none; }
 .cell-dl.dl-today   { background: #fff7ed; color: #ea580c; }
 .cell-dl.dl-soon    { background: #fffbeb; color: #d97706; }
 
-.cell-tasks { display: flex; flex-direction: column; gap: 2px; }
+.cell-tasks { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+
+/* ---- 스팬 바 (Google Calendar style multi-day events) ---- */
+.cell-span-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 -6px 3px;
+}
+.span-bar {
+  height: 16px;
+  line-height: 16px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #fff;
+  padding: 0 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: opacity var(--transition);
+}
+.span-bar:hover { opacity: 0.82; }
+.span-bar.span-start {
+  margin-left: 6px;
+  border-radius: 8px 0 0 8px;
+}
+.span-bar.span-end {
+  margin-right: 6px;
+  border-radius: 0 8px 8px 0;
+}
+.span-bar.span-mid { }
+.span-bar.span-solo {
+  margin-left: 6px;
+  margin-right: 6px;
+  border-radius: 8px;
+}
+.span-empty { height: 16px; }
 .cell-task {
   padding: 2px 6px;
   border-radius: 4px;
@@ -1617,6 +1636,155 @@ body.dark .filter-btn { background: #1e293b; color: #94a3b8; }
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* ============================================================
+   MEMO BOARD (포스트잇)
+   ============================================================ */
+.memo-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 22px;
+  align-items: start;
+}
+
+.memo-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 64px 20px;
+  color: var(--slate-400);
+  text-align: center;
+}
+.memo-empty i { font-size: 3rem; margin-bottom: 4px; }
+.memo-empty p { font-size: 0.95rem; font-weight: 500; }
+.memo-empty-sub { font-size: 0.82rem !important; font-weight: 400 !important; }
+
+.memo-note {
+  background: var(--note-bg, #fef9c3);
+  border-radius: 2px 2px 4px 4px;
+  box-shadow: 2px 4px 12px rgba(0,0,0,.12), 0 1px 3px rgba(0,0,0,.08);
+  display: flex;
+  flex-direction: column;
+  min-height: 190px;
+  transition: box-shadow .2s, transform .15s;
+  position: relative;
+}
+.memo-note:hover {
+  box-shadow: 4px 8px 22px rgba(0,0,0,.18), 0 2px 6px rgba(0,0,0,.1);
+  transform: translateY(-3px);
+  z-index: 2;
+}
+.memo-note.memo-dragging {
+  opacity: .5;
+  transform: rotate(3deg) scale(.96);
+  box-shadow: 6px 12px 28px rgba(0,0,0,.28);
+  cursor: grabbing;
+}
+.memo-note.memo-drag-over {
+  outline: 2px dashed var(--indigo-500);
+  outline-offset: 3px;
+  transform: scale(1.03);
+}
+
+/* 포스트잇 상단 컬러 스트립 */
+.memo-note-top {
+  background: var(--note-border, #fde047);
+  display: flex;
+  align-items: center;
+  padding: 5px 7px;
+  gap: 3px;
+  border-radius: 2px 2px 0 0;
+  flex-shrink: 0;
+  cursor: grab;
+}
+.memo-note.memo-dragging .memo-note-top { cursor: grabbing; }
+
+.memo-drag-handle {
+  flex: 1;
+  color: rgba(0,0,0,.3);
+  font-size: .7rem;
+  pointer-events: none;
+}
+
+.memo-pin-btn,
+.memo-del-btn {
+  width: 20px; height: 20px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .65rem;
+  color: rgba(0,0,0,.4);
+  opacity: 0;
+  transition: opacity .15s, background .15s, color .15s;
+  flex-shrink: 0;
+}
+.memo-note:hover .memo-pin-btn,
+.memo-note:hover .memo-del-btn { opacity: 1; }
+.memo-pin-btn:hover { background: rgba(0,0,0,.12); color: var(--indigo-600); }
+.memo-del-btn:hover { background: rgba(0,0,0,.12); color: var(--red-500); }
+
+.memo-textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  resize: none;
+  padding: 10px 12px 6px;
+  font-size: .9rem;
+  line-height: 1.65;
+  color: rgba(0,0,0,.78);
+  outline: none;
+  min-height: 120px;
+  font-family: inherit;
+  cursor: text;
+  user-select: text;
+}
+.memo-textarea::placeholder { color: rgba(0,0,0,.28); }
+
+.memo-note-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 8px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.memo-colors { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+
+.memo-color-dot {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--dot-bg, #fef9c3);
+  border: 2px solid var(--dot-border, #fde047);
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  flex-shrink: 0;
+}
+.memo-color-dot:hover { transform: scale(1.4); }
+.memo-color-dot.active {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 2px rgba(0,0,0,.4);
+}
+
+.memo-date {
+  font-size: .68rem;
+  color: rgba(0,0,0,.35);
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* 다크 모드 */
+body.dark .memo-textarea { color: rgba(255,255,255,.85); }
+body.dark .memo-textarea::placeholder { color: rgba(255,255,255,.28); }
+body.dark .memo-note { box-shadow: 2px 4px 14px rgba(0,0,0,.4); }
+body.dark .memo-note:hover { box-shadow: 4px 8px 24px rgba(0,0,0,.5); }
+body.dark .memo-drag-handle { color: rgba(255,255,255,.35); }
+body.dark .memo-pin-btn,
+body.dark .memo-del-btn { color: rgba(255,255,255,.45); }
+body.dark .memo-date { color: rgba(255,255,255,.35); }
 
 /* ---------- loan amortization preview ---------- */
 .loan-preview {

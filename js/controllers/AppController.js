@@ -33,6 +33,7 @@ class AppController {
       teams:      () => TeamController.init(),
       settings:   () => SettingsController.init(),
       calculator: () => CalculatorController.init(),
+      memo:       () => MemoController.init(),
     };
     controllers[view]?.();
   }
