@@ -17,10 +17,26 @@ class TaskView {
     tasks.forEach(task => container.appendChild(this.#renderItem(task, onToggle, onEdit, teamsMap)));
   }
 
+  // Returns { pct, cls } for the deadline bar, or null if not applicable.
+  static #deadlineBar(task) {
+    if (task.completed) return null;
+    const effective = task.deadline || task.date;
+    if (!effective) return null;
+    const days = NotificationService.getDaysUntil(effective);
+    if (days < 0) return null; // 이미 초과 — 배지로 표시됨
+    const pct = Math.min(100, Math.max(2, Math.round((days / 30) * 100)));
+    const cls = days > 7 ? 'dl-bar-safe'
+              : days > 3 ? 'dl-bar-warn'
+              : days > 0 ? 'dl-bar-near'
+              :             'dl-bar-due';
+    return { pct, cls, days };
+  }
+
   static #renderItem(task, onToggle, onEdit, teamsMap) {
     const [label, color] = this.#PRIORITY[task.priority] || ['보통', 'amber'];
     const team   = task.team_id ? (teamsMap[task.team_id] || null) : null;
     const dlInfo = NotificationService.getDeadlineInfo(task);
+    const bar    = this.#deadlineBar(task);
 
     const el = document.createElement('div');
     el.className = `task-item priority-${task.priority} ${task.completed ? 'completed' : ''} ${dlInfo ? dlInfo.cls + '-item' : ''}`;
@@ -47,6 +63,10 @@ class TaskView {
             ? `<span class="date-tag deadline-date-tag"><i class="fas fa-flag"></i>마감 ${task.deadline}</span>`
             : ''}
         </div>
+        ${bar ? `
+        <div class="dl-bar-wrap" title="마감까지 ${bar.days}일">
+          <div class="dl-bar ${bar.cls}" style="width:${bar.pct}%"></div>
+        </div>` : ''}
       </div>`;
 
     el.querySelector('.check-btn').addEventListener('click', e => {

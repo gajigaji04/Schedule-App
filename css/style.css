@@ -575,6 +575,25 @@ a { text-decoration: none; }
 .task-desc-text { font-size: 0.82rem; color: var(--slate-500); margin-bottom: 6px; }
 .task-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 
+/* 마감일 잔여시간 바 */
+.dl-bar-wrap {
+  margin-top: 7px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.dl-bar {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+.dl-bar-safe { background: #22c55e; }
+.dl-bar-warn { background: #f59e0b; }
+.dl-bar-near { background: #f97316; }
+.dl-bar-due  { background: #ef4444; }
+.task-item.completed .dl-bar-wrap { display: none; }
+
 .priority-tag {
   padding: 2px 8px;
   border-radius: 99px;
