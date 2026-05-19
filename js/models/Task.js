@@ -46,6 +46,20 @@ class TaskModel {
     return data || [];
   }
 
+  // Fetches tasks that overlap [start, end] — includes span tasks that start before the range.
+  static async getOverlapping(start, end) {
+    const user = UserModel.getCurrent();
+    if (!user) return [];
+    // Fetch all tasks with date <= end, then filter client-side for overlap.
+    const { data } = await db.from('tasks').select('*')
+      .lte('date', end)
+      .or(this.#visibleFilter(user))
+      .order('date');
+    return (data || []).filter(t =>
+      t.date >= start || (t.deadline && t.deadline >= start)
+    );
+  }
+
   static async create(data) {
     const task = {
       id:          't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),

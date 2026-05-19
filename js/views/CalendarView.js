@@ -218,4 +218,134 @@ class CalendarView {
       });
     });
   }
+
+  // ---------- year view ----------
+  static renderYear(container, year, tasks, onMonthClick) {
+    // Build set of all dates touched by tasks (including span ranges).
+    const taskDates = new Set();
+    tasks.forEach(t => {
+      taskDates.add(t.date);
+      if (t.deadline && t.deadline > t.date) {
+        const s = new Date(t.date     + 'T00:00:00');
+        const e = new Date(t.deadline + 'T00:00:00');
+        for (const d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+          taskDates.add(this.toDateStr(new Date(d)));
+        }
+      }
+    });
+
+    const todayStr = this.toDateStr(new Date());
+    const nowYear  = new Date().getFullYear();
+    const nowMonth = new Date().getMonth();
+
+    let html = '<div class="year-grid">';
+    for (let m = 0; m < 12; m++) {
+      html += this.#renderYearMonth(year, m, taskDates, todayStr,
+        year === nowYear && m === nowMonth);
+    }
+    html += '</div>';
+    container.innerHTML = html;
+
+    container.querySelectorAll('.year-month-card').forEach(card => {
+      card.addEventListener('click', () => onMonthClick(+card.dataset.month));
+    });
+  }
+
+  static #renderYearMonth(year, month, taskDates, todayStr, isCurrent) {
+    const firstDay = new Date(year, month, 1);
+    const lastDay  = new Date(year, month + 1, 0);
+
+    let html = `<div class="year-month-card" data-month="${month}">
+      <div class="year-month-hdr${isCurrent ? ' current' : ''}">${this.MONTHS[month]}</div>
+      <div class="year-mini-grid">`;
+
+    this.DAYS.forEach(d => { html += `<div class="ymg-hdr">${d}</div>`; });
+
+    for (let i = 0; i < firstDay.getDay(); i++) {
+      html += `<div class="ymg-cell other"></div>`;
+    }
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const ds       = this.toDateStr(new Date(year, month, day));
+      const hasTasks = taskDates.has(ds);
+      const isToday  = ds === todayStr;
+      html += `<div class="ymg-cell${isToday ? ' today' : ''}${hasTasks && !isToday ? ' has-tasks' : ''}">
+        ${day}${hasTasks ? '<span class="ymg-dot"></span>' : ''}
+      </div>`;
+    }
+
+    html += '</div></div>';
+    return html;
+  }
+
+  // ---------- week view ----------
+  static renderWeek(container, weekDays, tasks, onDateClick) {
+    const todayStr = this.toDateStr(new Date());
+
+    // Map each day → tasks active on that day.
+    const dayTasks = {};
+    weekDays.forEach(d => {
+      dayTasks[d] = tasks.filter(t =>
+        t.deadline && t.deadline > t.date
+          ? t.date <= d && t.deadline >= d
+          : t.date === d
+      );
+    });
+
+    let html = '<div class="week-grid">';
+    weekDays.forEach(dateStr => {
+      const d       = new Date(dateStr + 'T00:00:00');
+      const isToday = dateStr === todayStr;
+      const dt      = dayTasks[dateStr];
+
+      const tasksHtml = dt.map(t => {
+        const dl     = NotificationService.getDeadlineInfo(t);
+        const isSpan = t.deadline && t.deadline > t.date;
+        const cStyle = t.color
+          ? `style="background:${t.color}18;border-left:3px solid ${t.color};color:${t.color}"`
+          : '';
+        const cClass = t.color ? '' : t.priority;
+        return `
+          <div class="week-task ${cClass} ${t.completed ? 'done' : ''} ${isSpan ? 'span-chip' : ''}"
+               data-task-id="${t.id}" title="${t.title}" ${cStyle}>
+            <span class="week-task-title">${t.title}</span>
+            ${dl ? `<span class="cell-dl ${dl.cls}">${dl.label}</span>` : ''}
+          </div>`;
+      }).join('');
+
+      html += `
+        <div class="week-col${isToday ? ' today' : ''}" data-date="${dateStr}">
+          <div class="week-col-hdr${isToday ? ' today' : ''}">
+            <span class="week-dow">${this.DAYS[d.getDay()]}</span>
+            <span class="week-date-num${isToday ? ' today-circle' : ''}">${d.getDate()}</span>
+          </div>
+          <div class="week-col-body">
+            ${tasksHtml}
+            <button class="week-add-btn" data-add-date="${dateStr}"
+                    title="${dateStr} 일정 추가"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+
+    container.querySelectorAll('.week-task').forEach(el => {
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        TaskController.openEditModal(el.dataset.taskId);
+      });
+    });
+    container.querySelectorAll('.week-add-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        TaskController.openAddModal(btn.dataset.addDate);
+      });
+    });
+    container.querySelectorAll('.week-col-body').forEach(body => {
+      body.addEventListener('click', e => {
+        if (!e.target.closest('.week-task') && !e.target.closest('.week-add-btn')) {
+          onDateClick(body.closest('.week-col').dataset.date);
+        }
+      });
+    });
+  }
 }
