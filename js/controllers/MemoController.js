@@ -75,6 +75,7 @@ class MemoController {
     el.dataset.memoId = memo.id;
     el.style.setProperty('--note-bg',     col.bg);
     el.style.setProperty('--note-border', col.border);
+    el.style.height = (memo.height || 200) + 'px';
 
     el.innerHTML = `
       <div class="memo-note-top">
@@ -99,7 +100,8 @@ class MemoController {
           ).join('')}
         </div>
         <span class="memo-date">${this.#fmtDate(memo.createdAt)}</span>
-      </div>`;
+      </div>
+      <div class="memo-resize-handle" title="드래그로 크기 조절"></div>`;
 
     // Set text safely (avoids HTML entity issues in textarea)
     el.querySelector('.memo-textarea').value = memo.text;
@@ -139,6 +141,9 @@ class MemoController {
       this.#save(list);
       this.#render();
     });
+
+    // Resize
+    this.#bindResize(el, memo);
 
     // ---------- drag & drop ----------
 
@@ -180,6 +185,40 @@ class MemoController {
     });
 
     return el;
+  }
+
+  static #bindResize(el, memo) {
+    const handle = el.querySelector('.memo-resize-handle');
+
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      e.stopPropagation(); // prevent note drag-to-reorder
+
+      const startY = e.clientY;
+      const startH = el.offsetHeight;
+
+      el.classList.add('memo-resizing');
+      document.body.style.cursor = 'ns-resize';
+
+      const onMove = e => {
+        const newH = Math.max(140, startH + e.clientY - startY);
+        el.style.height = newH + 'px';
+      };
+
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup',   onUp);
+        el.classList.remove('memo-resizing');
+        document.body.style.cursor = '';
+
+        const list = this.#load();
+        const m = list.find(m => m.id === memo.id);
+        if (m) { m.height = el.offsetHeight; this.#save(list); }
+      };
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup',   onUp);
+    });
   }
 
   static #fmtDate(iso) {

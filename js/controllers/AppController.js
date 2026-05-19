@@ -3,13 +3,24 @@
 class AppController {
   static #currentView = 'dashboard';
 
-  static init() {
+  static async init() {
     this.#bindLogin();
 
-    const user = UserModel.getCurrent();
-    if (user) {
-      this.#showApp(user);
+    // Check Supabase Auth session first — handles Google OAuth redirect.
+    try {
+      const { data: { session } } = await db.auth.getSession();
+      if (session?.user) {
+        const user = await UserModel.handleOAuthCallback(session.user);
+        this.#showApp(user);
+        return;
+      }
+    } catch (err) {
+      console.error('Session check failed:', err);
     }
+
+    // Fall back to email/name session stored in localStorage.
+    const user = UserModel.getCurrent();
+    if (user) this.#showApp(user);
   }
 
   static navigateTo(view) {
@@ -61,10 +72,12 @@ class AppController {
   }
 
   static #bindLogin() {
-    const form   = document.getElementById('login-form');
-    const btn    = document.getElementById('login-submit-btn');
-    const errEl  = document.getElementById('login-error');
+    const form  = document.getElementById('login-form');
+    const btn   = document.getElementById('login-submit-btn');
+    const gBtn  = document.getElementById('google-login-btn');
+    const errEl = document.getElementById('login-error');
 
+    // Email / name login
     form.addEventListener('submit', async e => {
       e.preventDefault();
       btn.disabled    = true;
@@ -82,6 +95,20 @@ class AppController {
       } finally {
         btn.disabled    = false;
         btn.textContent = '시작하기';
+      }
+    });
+
+    // Google OAuth login
+    gBtn.addEventListener('click', async () => {
+      gBtn.disabled = true;
+      errEl.classList.add('hidden');
+      try {
+        await UserModel.loginWithGoogle();
+        // Browser redirects — nothing below this runs.
+      } catch (err) {
+        errEl.textContent = `Google 로그인 실패: ${err.message}`;
+        errEl.classList.remove('hidden');
+        gBtn.disabled = false;
       }
     });
   }
@@ -113,9 +140,10 @@ class AppController {
   }
 
   static #bindLogout() {
-    document.getElementById('logout-btn').addEventListener('click', () => {
+    document.getElementById('logout-btn').addEventListener('click', async () => {
       if (!confirm('로그아웃 하시겠습니까?')) return;
-      UserModel.logout();
+      await db.auth.signOut(); // clear Supabase Auth session (Google OAuth)
+      UserModel.logout();      // clear localStorage session (email login)
       document.getElementById('app').classList.add('hidden');
       document.getElementById('login-modal').classList.remove('hidden');
       document.getElementById('login-form').reset();
