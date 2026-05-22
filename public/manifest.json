@@ -1,0 +1,41 @@
+{
+  "name": "TeamScheduler",
+  "short_name": "TeamSched",
+  "description": "팀 일정 관리 및 협업 도구",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#1e1b4b",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "오늘 할 일",
+      "short_name": "할 일",
+      "description": "오늘의 작업 목록 열기",
+      "url": "/tasks",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "캘린더",
+      "short_name": "캘린더",
+      "description": "일정 캘린더 열기",
+      "url": "/calendar",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
