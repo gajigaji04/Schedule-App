@@ -1,5 +1,6 @@
 // View — Calendar
 // Pure rendering helpers for mini and full calendar grids.
+// Integrates KoreanHolidays for public holiday display.
 class CalendarView {
   static DAYS   = ['일', '월', '화', '수', '목', '금', '토'];
   static MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -24,8 +25,22 @@ class CalendarView {
          :                       '#6366f1';
   }
 
+  // 요일 헤더 셀 클래스 — 일요일 빨강, 토요일 파랑
+  static #hdrClass(dowIndex) {
+    if (dowIndex === 0) return ' dow-sun';
+    if (dowIndex === 6) return ' dow-sat';
+    return '';
+  }
+
+  // 날짜 숫자 클래스 — 일요일·공휴일 빨강, 토요일 파랑
+  static #numClass(dateStr) {
+    const info = KoreanHolidays.info(dateStr);
+    if (info.isRed)     return ' holiday-num';
+    if (info.isSaturday) return ' saturday-num';
+    return '';
+  }
+
   // 주(week) 단위로 각 스팬 태스크의 레인(행) 번호를 사전 계산한다.
-  // Returns: { [taskId]: { [weekIndex]: laneNumber } }
   static #computeSpanLanes(tasks, year, month, startDow) {
     const spanTasks = tasks.filter(t => t.deadline && t.deadline > t.date);
     const lanes = {};
@@ -53,8 +68,8 @@ class CalendarView {
 
     let html = `<div class="mini-grid">`;
 
-    this.DAYS.forEach(d => {
-      html += `<div class="day-hdr">${d}</div>`;
+    this.DAYS.forEach((d, i) => {
+      html += `<div class="day-hdr${this.#hdrClass(i)}">${d}</div>`;
     });
 
     for (let i = 0; i < firstDay.getDay(); i++) {
@@ -65,11 +80,15 @@ class CalendarView {
       const dateStr  = this.toDateStr(new Date(year, month, day));
       const dayTasks = tasks.filter(t => t.date === dateStr);
       const isToday  = dateStr === todayStr;
+      const hInfo    = KoreanHolidays.info(dateStr);
+      const numCls   = this.#numClass(dateStr);
       const dots     = dayTasks.slice(0, 3).map(() => `<div class="mini-dot"></div>`).join('');
 
       html += `
-        <div class="mini-cell ${isToday ? 'today' : ''}" data-date="${dateStr}">
-          ${day}
+        <div class="mini-cell ${isToday ? 'today' : ''}" data-date="${dateStr}"
+             title="${hInfo.holiday || ''}">
+          <span class="mini-day-num${numCls}">${day}</span>
+          ${hInfo.holiday ? `<div class="mini-holiday">${hInfo.holiday}</div>` : ''}
           ${dots ? `<div class="dot-row">${dots}</div>` : ''}
         </div>`;
     }
@@ -99,9 +118,11 @@ class CalendarView {
 
     let html = `<div class="full-grid">`;
 
-    // 요일 헤더
+    // 요일 헤더 (일 = 빨강, 토 = 파랑)
     html += `<div class="cal-hdr-row">`;
-    this.DAYS.forEach(d => { html += `<div class="cal-hdr-cell">${d}</div>`; });
+    this.DAYS.forEach((d, i) => {
+      html += `<div class="cal-hdr-cell${this.#hdrClass(i)}">${d}</div>`;
+    });
     html += `</div>`;
 
     // 이전 달 빈 셀
@@ -115,8 +136,10 @@ class CalendarView {
       const dateStr = this.toDateStr(new Date(year, month, day));
       const isToday = dateStr === todayStr;
       const wIdx    = Math.floor((startDow + day - 1) / 7);
+      const hInfo   = KoreanHolidays.info(dateStr);
+      const numCls  = this.#numClass(dateStr);
 
-      // ── 스팬 바 (시작일~마감일이 다른 다일 태스크) ──
+      // ── 스팬 바 ──
       const spanHere = tasks.filter(t =>
         t.deadline && t.deadline > t.date &&
         t.date <= dateStr && t.deadline >= dateStr
@@ -147,7 +170,7 @@ class CalendarView {
         spanBarsHtml += '</div>';
       }
 
-      // ── 단일 태스크 칩 (deadline 없거나 당일 마감) ──
+      // ── 단일 태스크 칩 ──
       const singleTasks = tasks.filter(t =>
         t.date === dateStr && !(t.deadline && t.deadline > t.date)
       );
@@ -169,9 +192,11 @@ class CalendarView {
         : '';
 
       html += `
-        <div class="full-cell ${isToday ? 'today' : ''}" data-date="${dateStr}">
+        <div class="full-cell ${isToday ? 'today' : ''} ${hInfo.isHoliday ? 'holiday-cell' : ''}"
+             data-date="${dateStr}">
           <div class="cell-head-row">
-            <div class="cell-num">${day}</div>
+            <div class="cell-num${numCls}">${day}</div>
+            ${hInfo.holiday ? `<span class="cell-holiday-name">${hInfo.holiday}</span>` : ''}
             <button class="cell-add-btn" data-add-date="${dateStr}" title="${dateStr} 일정 추가">
               <i class="fas fa-plus"></i>
             </button>
@@ -191,7 +216,6 @@ class CalendarView {
     html += `</div>`;
     container.innerHTML = html;
 
-    // "+" 버튼
     container.querySelectorAll('.cell-add-btn').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
@@ -199,7 +223,6 @@ class CalendarView {
       });
     });
 
-    // 날짜 셀 클릭 → 데이 패널
     container.querySelectorAll('.full-cell[data-date]').forEach(cell => {
       cell.addEventListener('click', e => {
         if (!e.target.closest('.cell-task') &&
@@ -210,7 +233,6 @@ class CalendarView {
       });
     });
 
-    // 태스크 칩·스팬 바 클릭 → 수정 모달
     container.querySelectorAll('.cell-task, .span-bar').forEach(el => {
       el.addEventListener('click', e => {
         e.stopPropagation();
@@ -221,7 +243,6 @@ class CalendarView {
 
   // ---------- year view ----------
   static renderYear(container, year, tasks, onMonthClick) {
-    // Build set of all dates touched by tasks (including span ranges).
     const taskDates = new Set();
     tasks.forEach(t => {
       taskDates.add(t.date);
@@ -259,7 +280,9 @@ class CalendarView {
       <div class="year-month-hdr${isCurrent ? ' current' : ''}">${this.MONTHS[month]}</div>
       <div class="year-mini-grid">`;
 
-    this.DAYS.forEach(d => { html += `<div class="ymg-hdr">${d}</div>`; });
+    this.DAYS.forEach((d, i) => {
+      html += `<div class="ymg-hdr${this.#hdrClass(i)}">${d}</div>`;
+    });
 
     for (let i = 0; i < firstDay.getDay(); i++) {
       html += `<div class="ymg-cell other"></div>`;
@@ -268,8 +291,11 @@ class CalendarView {
       const ds       = this.toDateStr(new Date(year, month, day));
       const hasTasks = taskDates.has(ds);
       const isToday  = ds === todayStr;
-      html += `<div class="ymg-cell${isToday ? ' today' : ''}${hasTasks && !isToday ? ' has-tasks' : ''}">
-        ${day}${hasTasks ? '<span class="ymg-dot"></span>' : ''}
+      const hInfo    = KoreanHolidays.info(ds);
+      const numCls   = hInfo.isRed ? ' holiday-num' : hInfo.isSaturday ? ' saturday-num' : '';
+      html += `<div class="ymg-cell${isToday ? ' today' : ''}${hasTasks && !isToday ? ' has-tasks' : ''}"
+               title="${hInfo.holiday || ''}">
+        <span class="${numCls ? numCls.trim() : ''}">${day}</span>${hasTasks ? '<span class="ymg-dot"></span>' : ''}
       </div>`;
     }
 
@@ -281,7 +307,6 @@ class CalendarView {
   static renderWeek(container, weekDays, tasks, onDateClick) {
     const todayStr = this.toDateStr(new Date());
 
-    // Map each day → tasks active on that day.
     const dayTasks = {};
     weekDays.forEach(d => {
       dayTasks[d] = tasks.filter(t =>
@@ -296,6 +321,8 @@ class CalendarView {
       const d       = new Date(dateStr + 'T00:00:00');
       const isToday = dateStr === todayStr;
       const dt      = dayTasks[dateStr];
+      const hInfo   = KoreanHolidays.info(dateStr);
+      const numCls  = this.#numClass(dateStr);
 
       const tasksHtml = dt.map(t => {
         const dl     = NotificationService.getDeadlineInfo(t);
@@ -315,8 +342,9 @@ class CalendarView {
       html += `
         <div class="week-col${isToday ? ' today' : ''}" data-date="${dateStr}">
           <div class="week-col-hdr${isToday ? ' today' : ''}">
-            <span class="week-dow">${this.DAYS[d.getDay()]}</span>
-            <span class="week-date-num${isToday ? ' today-circle' : ''}">${d.getDate()}</span>
+            <span class="week-dow${hInfo.isRed ? ' holiday-num' : hInfo.isSaturday ? ' saturday-num' : ''}">${this.DAYS[d.getDay()]}</span>
+            <span class="week-date-num${isToday ? ' today-circle' : ''}${numCls}">${d.getDate()}</span>
+            ${hInfo.holiday ? `<span class="week-holiday-name">${hInfo.holiday}</span>` : ''}
           </div>
           <div class="week-col-body">
             ${tasksHtml}

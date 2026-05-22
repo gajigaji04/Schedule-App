@@ -256,6 +256,18 @@ class TimerController {
       this.#pmLongEvery = parseInt(document.getElementById('pm-long-every').value) || 4;
     };
 
+    // Live-update display when config values are changed while paused.
+    ['pm-work-min', 'pm-short-min', 'pm-long-min', 'pm-long-every'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        if (this.#pmRunning) return;
+        readCfg();
+        const minMap = { work: this.#pmWork, short: this.#pmShort, long: this.#pmLong };
+        this.#pmTotalMs  = (minMap[this.#pmMode] || this.#pmWork) * 60 * 1000;
+        this.#pmRemainMs = this.#pmTotalMs;
+        this.#updatePM();
+      });
+    });
+
     startBtn.addEventListener('click', () => {
       if (this.#pmRunning) {
         // Pause
@@ -266,6 +278,13 @@ class TimerController {
         startBtn.innerHTML = '<i class="fas fa-play"></i><span>재개</span>';
       } else {
         readCfg();
+        // Sync total/remain with updated config if timer hasn't been modified.
+        const minMap   = { work: this.#pmWork, short: this.#pmShort, long: this.#pmLong };
+        const freshMs  = (minMap[this.#pmMode] || this.#pmWork) * 60 * 1000;
+        if (this.#pmRemainMs === this.#pmTotalMs) {
+          this.#pmTotalMs  = freshMs;
+          this.#pmRemainMs = freshMs;
+        }
         if (this.#pmRemainMs <= 0) this.#pmNextPhase(false);
         this.#pmStart   = performance.now();
         this.#pmRunning = true;
@@ -384,10 +403,25 @@ class TimerController {
   static #saveAlarms(list) { localStorage.setItem(this.#ALARM_KEY, JSON.stringify(list)); }
 
   static #bindAlarm() {
+    // Spinner buttons for hour / minute.
+    document.querySelectorAll('.alarm-spin-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const input = document.getElementById(btn.dataset.field);
+        const dir   = parseInt(btn.dataset.dir);
+        const max   = parseInt(input.max);
+        const min   = parseInt(input.min);
+        let   val   = parseInt(input.value) + dir;
+        if (val > max) val = min;
+        if (val < min) val = max;
+        input.value = val;
+      });
+    });
+
     document.getElementById('alarm-add-btn').addEventListener('click', () => {
-      const timeVal  = document.getElementById('alarm-time-input').value;
+      const h = String(parseInt(document.getElementById('alarm-h').value) || 0).padStart(2, '0');
+      const m = String(parseInt(document.getElementById('alarm-m').value) || 0).padStart(2, '0');
+      const timeVal  = `${h}:${m}`;
       const labelVal = document.getElementById('alarm-label-input').value.trim();
-      if (!timeVal) { alert('시간을 선택해주세요.'); return; }
       const list = this.#loadAlarms();
       list.push({ id: Date.now().toString(), time: timeVal, label: labelVal, enabled: true });
       list.sort((a, b) => a.time.localeCompare(b.time));

@@ -87,16 +87,17 @@ class SettingsController {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        document.body.classList.toggle('dark', btn.dataset.mode === 'dark');
-        localStorage.setItem('ts_theme', btn.dataset.mode);
+        const mode = btn.dataset.mode;
+        localStorage.setItem('ts_theme', mode);
+        applyMode(mode); // defined in app.js
       });
     });
   }
 
   static #syncModeSwatch() {
-    const current = ThemeService.getModeName();
+    const saved = localStorage.getItem('ts_theme') || 'auto';
     document.querySelectorAll('.mode-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === current);
+      btn.classList.toggle('active', btn.dataset.mode === saved);
     });
   }
 

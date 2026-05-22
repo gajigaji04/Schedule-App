@@ -40,7 +40,7 @@ class AppController {
     const controllers = {
       dashboard:  () => DashboardController.init(),
       calendar:   () => CalendarController.init(),
-      tasks:      () => TaskController.initTasksView(),
+      tasks:      () => { TaskController.initTasksView(); ChecklistController.init(); },
       teams:      () => TeamController.init(),
       settings:   () => SettingsController.init(),
       calculator: () => CalculatorController.init(),
@@ -63,6 +63,8 @@ class AppController {
 
     HeaderView.render(user);
     TaskController.init();
+    ChatController.init();
+    AIAssistantController.init();
     this.#bindSidebar();
     this.#bindHeader();
     this.#bindLogout();

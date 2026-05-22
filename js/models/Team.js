@@ -46,4 +46,33 @@ class TeamModel {
     if (!team || team.member_emails.includes(email)) return;
     await this.update(teamId, { member_emails: [...team.member_emails, email] });
   }
+
+  // Returns tasks for the team grouped by member, with user info resolved.
+  static async getSchedule(teamId) {
+    const { data: tasks } = await db.from('tasks')
+      .select('*')
+      .eq('team_id', teamId)
+      .order('date');
+    if (!tasks?.length) return [];
+
+    const userIds = [...new Set(tasks.map(t => t.user_id))];
+    const { data: users } = await db.from('users')
+      .select('id, name, email')
+      .in('id', userIds);
+
+    const userMap = Object.fromEntries((users || []).map(u => [u.id, u]));
+
+    const groups = {};
+    tasks.forEach(t => {
+      if (!groups[t.user_id]) {
+        groups[t.user_id] = {
+          user:  userMap[t.user_id] || { id: t.user_id, name: '알 수 없음', email: '' },
+          tasks: [],
+        };
+      }
+      groups[t.user_id].tasks.push(t);
+    });
+
+    return Object.values(groups);
+  }
 }

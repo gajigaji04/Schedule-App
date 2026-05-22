@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TeamScheduler</title>
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TeamScheduler" />
+    <link rel="apple-touch-icon" href="icons/icon-192.svg" />
     <link rel="stylesheet" href="css/style.css" />
     <link
       rel="stylesheet"
@@ -316,6 +322,34 @@
             </div>
           </div>
 
+          <!-- Productivity stats -->
+          <div class="productivity-row">
+            <div class="prod-card">
+              <div class="prod-icon"><i class="fas fa-chart-line"></i></div>
+              <div class="prod-body">
+                <div class="prod-num" id="stat-weekly-rate">-</div>
+                <div class="prod-lbl">이번 주 완료율</div>
+              </div>
+              <div class="prod-bar-wrap">
+                <div class="prod-bar" id="stat-weekly-bar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="prod-card">
+              <div class="prod-icon prod-icon--streak"><i class="fas fa-fire"></i></div>
+              <div class="prod-body">
+                <div class="prod-num" id="stat-streak">0</div>
+                <div class="prod-lbl">연속 달성일</div>
+              </div>
+            </div>
+            <div class="prod-card">
+              <div class="prod-icon prod-icon--day"><i class="fas fa-star"></i></div>
+              <div class="prod-body">
+                <div class="prod-num" id="stat-best-day">-</div>
+                <div class="prod-lbl">최고 생산성 요일</div>
+              </div>
+            </div>
+          </div>
+
           <div class="dash-grid">
             <div class="card">
               <div class="card-head">
@@ -375,14 +409,56 @@
               <i class="fas fa-plus"></i> 할일 추가
             </button>
           </div>
-          <div class="filter-bar">
-            <button class="filter-btn active" data-filter="all">전체</button>
-            <button class="filter-btn" data-filter="today">오늘</button>
-            <button class="filter-btn" data-filter="pending">미완료</button>
-            <button class="filter-btn" data-filter="done">완료</button>
-            <button class="filter-btn" data-filter="shared">팀 공유</button>
+
+          <div class="tasks-split">
+            <!-- LEFT : 할일 목록 -->
+            <div class="tasks-split-main">
+              <div class="filter-bar">
+                <button class="filter-btn active" data-filter="all">전체</button>
+                <button class="filter-btn" data-filter="today">오늘</button>
+                <button class="filter-btn" data-filter="pending">미완료</button>
+                <button class="filter-btn" data-filter="done">완료</button>
+                <button class="filter-btn" data-filter="shared">팀 공유</button>
+              </div>
+              <div id="all-task-list" class="task-list-full"></div>
+            </div>
+
+            <!-- RIGHT : To-do 체크리스트 -->
+            <div class="tasks-split-checklist">
+              <div class="checklist-card">
+                <!-- 헤더 -->
+                <div class="checklist-card-head">
+                  <span class="checklist-card-title">
+                    <i class="fas fa-list-check"></i>
+                    <span>To-do 체크리스트</span>
+                  </span>
+                  <button class="cl-reset-btn" id="cl-reset-btn" title="전체 초기화">
+                    <i class="fas fa-rotate-left"></i>
+                  </button>
+                </div>
+
+                <!-- 진행률 -->
+                <div class="cl-progress-wrap">
+                  <div class="cl-progress-bar">
+                    <div class="cl-progress-fill" id="cl-progress-fill"></div>
+                  </div>
+                  <span class="cl-progress-label" id="cl-progress-label">0 / 0</span>
+                </div>
+
+                <!-- 항목 목록 -->
+                <ul class="cl-items" id="cl-items"></ul>
+
+                <!-- 항목 추가 -->
+                <div class="cl-add-row">
+                  <input class="cl-add-input" id="cl-add-input" type="text"
+                         placeholder="항목을 입력하고 Enter…" maxlength="80" />
+                  <button class="cl-add-btn" id="cl-add-btn">
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div id="all-task-list" class="task-list-full"></div>
         </div>
 
         <!-- TEAMS VIEW -->
@@ -983,11 +1059,28 @@
             <div class="alarm-add-card card">
               <h4><i class="fas fa-plus-circle"></i> 알람 추가</h4>
               <div class="alarm-add-row">
-                <input
-                  type="time"
-                  id="alarm-time-input"
-                  class="alarm-time-input"
-                />
+                <!-- Hour / Minute spinners -->
+                <div class="alarm-time-picker">
+                  <div class="alarm-spin-col">
+                    <button class="alarm-spin-btn" data-field="alarm-h" data-dir="1">▲</button>
+                    <input
+                      type="number" id="alarm-h"
+                      class="alarm-spin-input" value="7" min="0" max="23"
+                    />
+                    <button class="alarm-spin-btn" data-field="alarm-h" data-dir="-1">▼</button>
+                    <span class="alarm-spin-label">시</span>
+                  </div>
+                  <span class="alarm-colon">:</span>
+                  <div class="alarm-spin-col">
+                    <button class="alarm-spin-btn" data-field="alarm-m" data-dir="1">▲</button>
+                    <input
+                      type="number" id="alarm-m"
+                      class="alarm-spin-input" value="0" min="0" max="59"
+                    />
+                    <button class="alarm-spin-btn" data-field="alarm-m" data-dir="-1">▼</button>
+                    <span class="alarm-spin-label">분</span>
+                  </div>
+                </div>
                 <input
                   type="text"
                   id="alarm-label-input"
@@ -1034,6 +1127,10 @@
             <div class="card settings-card">
               <h3><i class="fas fa-circle-half-stroke"></i> 화면 모드</h3>
               <div class="mode-row">
+                <button class="mode-btn" data-mode="auto">
+                  <i class="fas fa-circle-half-stroke"></i>
+                  <span>자동</span>
+                </button>
                 <button class="mode-btn" data-mode="light">
                   <i class="fas fa-sun"></i>
                   <span>라이트</span>
@@ -1446,6 +1543,176 @@
       </div>
     </div>
 
+    <!-- ===== TEAM SCHEDULE MODAL ===== -->
+    <div id="team-schedule-modal" class="modal-overlay hidden">
+      <div class="modal-card modal-card--wide">
+        <div class="modal-head">
+          <h3 id="team-schedule-title"></h3>
+          <button class="icon-btn" id="close-team-schedule-modal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div id="team-schedule-body" class="team-schedule-body"></div>
+      </div>
+    </div>
+
+    <!-- ===== FLOATING AI ASSISTANT ===== -->
+    <!-- AI FAB (above chat FAB) -->
+    <button id="ai-fab" class="ai-fab" title="AI 비서 ARIA">
+      <i id="ai-fab-icon" class="fas fa-robot"></i>
+    </button>
+
+    <!-- AI Assistant Panel -->
+    <div id="ai-panel" class="ai-panel hidden">
+      <!-- Header -->
+      <div class="ai-panel-head">
+        <div class="ai-panel-head-left">
+          <div class="ai-panel-avatar">
+            <i class="fas fa-robot"></i>
+          </div>
+          <div>
+            <div class="ai-panel-title">ARIA</div>
+            <div class="ai-panel-sub">AI 비서 · Claude</div>
+          </div>
+        </div>
+        <div class="ai-panel-head-right">
+          <span id="ai-app-key-badge" class="ai-app-key-badge hidden">앱 제공 AI</span>
+          <button class="icon-btn" id="ai-clear-btn" title="대화 초기화">
+            <i class="fas fa-rotate-left"></i>
+          </button>
+          <button class="icon-btn" id="ai-key-change" title="내 API 키 변경">
+            <i class="fas fa-key"></i>
+          </button>
+          <button class="icon-btn" id="close-ai-panel" title="닫기">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- API Key Setup (shown when key not set) -->
+      <div id="ai-key-setup" class="ai-key-setup">
+        <div class="ai-key-icon"><i class="fas fa-key"></i></div>
+        <p class="ai-key-title">Claude API 키 설정</p>
+        <p class="ai-key-desc">
+          Anthropic Console에서 발급한 API 키를 입력하면<br>
+          AI 비서 ARIA를 바로 사용할 수 있습니다.
+        </p>
+        <input id="ai-key-input" class="ai-key-input" type="password"
+               placeholder="sk-ant-api03-…" autocomplete="off" />
+        <button id="ai-key-save" class="ai-key-save-btn">저장하고 시작하기</button>
+        <p class="ai-key-hint">
+          키는 이 기기에만 저장되며 외부로 전송되지 않습니다.
+        </p>
+      </div>
+
+      <!-- Chat area (shown when key is set) -->
+      <div id="ai-chat-area" class="ai-chat-area hidden">
+        <!-- Quick action buttons -->
+        <div class="ai-quick-actions">
+          <button class="ai-qa-btn" data-action="analyze">
+            <i class="fas fa-chart-bar"></i>
+            <span>오늘 분석</span>
+          </button>
+          <button class="ai-qa-btn" data-action="reschedule">
+            <i class="fas fa-calendar-days"></i>
+            <span>AI 재배치</span>
+          </button>
+          <button class="ai-qa-btn" data-action="procrastination">
+            <i class="fas fa-fire-flame-curved"></i>
+            <span>미루기 방지</span>
+          </button>
+          <button class="ai-qa-btn" data-action="decide">
+            <i class="fas fa-scale-balanced"></i>
+            <span>의사결정</span>
+          </button>
+        </div>
+
+        <!-- Messages -->
+        <div id="ai-msgs" class="ai-msgs"></div>
+
+        <!-- Input row -->
+        <div class="ai-input-row">
+          <input
+            id="ai-input"
+            class="ai-input"
+            type="text"
+            placeholder="AI에게 물어보세요… (Enter)"
+            maxlength="500"
+            autocomplete="off"
+          />
+          <button id="ai-send" class="ai-send-btn">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== FLOATING CHAT ===== -->
+    <!-- FAB -->
+    <button id="chat-fab" class="chat-fab" title="팀 채팅">
+      <i id="chat-fab-icon" class="fas fa-comments"></i>
+    </button>
+
+    <!-- Chat panel (appears above FAB) -->
+    <div id="chat-panel" class="chat-panel hidden">
+
+      <!-- Sidebar: tab + room list -->
+      <div class="chat-panel-sidebar">
+        <!-- Group / DM 탭 -->
+        <div class="chat-sidebar-tabs">
+          <button class="chat-stab active" data-tab="group">
+            <i class="fas fa-users"></i> 그룹
+          </button>
+          <button class="chat-stab" data-tab="dm">
+            <i class="fas fa-comment"></i> DM
+          </button>
+        </div>
+        <!-- Group room list -->
+        <div id="chat-group-list" class="chat-room-list"></div>
+        <!-- DM user list (hidden initially) -->
+        <div id="chat-dm-list" class="chat-room-list hidden"></div>
+      </div>
+
+      <!-- Main chat area -->
+      <div class="chat-panel-main">
+        <div class="chat-panel-head">
+          <span id="chat-active-name" class="chat-panel-title"></span>
+          <!-- Member management (group only) -->
+          <button class="icon-btn chat-members-btn hidden" id="chat-members-btn" title="팀원 관리">
+            <i class="fas fa-user-plus"></i>
+          </button>
+          <button class="icon-btn" id="close-chat-panel">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Member management popover -->
+        <div id="chat-members-popover" class="chat-members-popover hidden">
+          <div class="cmp-head">팀원 관리</div>
+          <ul id="cmp-member-list" class="cmp-list"></ul>
+          <div class="cmp-invite-row">
+            <input id="cmp-invite-input" class="cmp-invite-input" type="email"
+                   placeholder="초대할 이메일 입력…" />
+            <button id="cmp-invite-btn" class="cmp-invite-btn">초대</button>
+          </div>
+        </div>
+
+        <div id="chat-panel-msgs" class="chat-panel-msgs"></div>
+        <div class="chat-panel-input-row">
+          <input
+            type="text"
+            id="chat-panel-input"
+            class="chat-panel-input"
+            placeholder="메시지를 입력하세요… (Enter)"
+            maxlength="500"
+          />
+          <button class="btn-primary btn-sm" id="chat-panel-send">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== DAY PANEL ===== -->
     <div id="day-panel" class="day-panel hidden">
       <div class="day-panel-head">
@@ -1465,9 +1732,12 @@
     <!-- ===== SCRIPTS (order matters — models → views → controllers → app) ===== -->
     <script src="js/services/ThemeService.js"></script>
     <script src="js/services/NotificationService.js"></script>
+    <script src="js/services/KoreanHolidays.js"></script>
     <script src="js/models/User.js"></script>
     <script src="js/models/Task.js"></script>
     <script src="js/models/Team.js"></script>
+    <script src="js/models/Chat.js"></script>
+    <script src="js/models/Dm.js"></script>
     <script src="js/views/HeaderView.js"></script>
     <script src="js/views/CalendarView.js"></script>
     <script src="js/views/TaskView.js"></script>
@@ -1475,6 +1745,9 @@
     <script src="js/controllers/TaskController.js"></script>
     <script src="js/controllers/CalendarController.js"></script>
     <script src="js/controllers/TeamController.js"></script>
+    <script src="js/controllers/ChatController.js"></script>
+    <script src="js/controllers/ChecklistController.js"></script>
+    <script src="js/controllers/AIAssistantController.js"></script>
     <script src="js/controllers/DashboardController.js"></script>
     <script src="js/controllers/SettingsController.js"></script>
     <script src="js/controllers/CalculatorController.js"></script>
@@ -1482,5 +1755,10 @@
     <script src="js/controllers/TimerController.js"></script>
     <script src="js/controllers/AppController.js"></script>
     <script src="js/app.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      }
+    </script>
   </body>
 </html>

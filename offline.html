@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오프라인 — TeamScheduler</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; background: #1e1b4b; color: #e0e7ff; font-family: 'Noto Sans KR', sans-serif;
+      text-align: center; padding: 2rem;
+    }
+    .icon { font-size: 4rem; margin-bottom: 1.5rem; }
+    h1   { font-size: 1.5rem; margin-bottom: 0.75rem; color: #a5b4fc; }
+    p    { color: #818cf8; line-height: 1.6; margin-bottom: 2rem; }
+    button {
+      background: #4f46e5; color: white; border: none; border-radius: 0.75rem;
+      padding: 0.75rem 2rem; font-size: 1rem; cursor: pointer;
+    }
+    button:hover { background: #4338ca; }
+  </style>
+</head>
+<body>
+  <div class="icon">📅</div>
+  <h1>인터넷 연결이 없습니다</h1>
+  <p>TeamScheduler를 사용하려면 인터넷 연결이 필요합니다.<br>연결 후 다시 시도해 주세요.</p>
+  <button onclick="location.reload()">다시 시도</button>
+</body>
+</html>
