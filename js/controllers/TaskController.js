@@ -1,13 +1,17 @@
 // Controller — Task
 // Manages the task modal (add / edit / delete) and task list rendering.
 class TaskController {
-  static #editingId = null;
-  static #bound     = false;
+  static #editingId  = null;
+  static #bound      = false;
+  static #dpDate     = null;
+  static #dpDeadline = null;
 
   static init() {
     if (this.#bound) return;
     this.#bindModal();
     this.#bindColorSwatches();
+    this.#dpDate     = new DatePicker({ wrapperId: 'dp-wrap-date',     inputId: 'task-date',     placeholder: '날짜를 선택하세요' });
+    this.#dpDeadline = new DatePicker({ wrapperId: 'dp-wrap-deadline', inputId: 'task-deadline', placeholder: '선택 안함', clearable: true });
     this.#bound = true;
   }
 
@@ -17,9 +21,9 @@ class TaskController {
     this.#editingId = null;
     document.getElementById('task-modal-title').textContent = '할일 추가';
     document.getElementById('task-form').reset();
-    document.getElementById('task-id').value       = '';
-    document.getElementById('task-date').value     = date || CalendarView.toDateStr(new Date());
-    document.getElementById('task-deadline').value = '';
+    document.getElementById('task-id').value = '';
+    this.#dpDate.setValue(date || CalendarView.toDateStr(new Date()));
+    this.#dpDeadline.setValue('');
     document.getElementById('delete-task-btn').classList.add('hidden');
     this.#setActiveColor('');
     this.#populateTeamSelect('');
@@ -31,11 +35,11 @@ class TaskController {
     if (!task) return;
     this.#editingId = taskId;
     document.getElementById('task-modal-title').textContent = '할일 수정';
-    document.getElementById('task-id').value        = taskId;
-    document.getElementById('task-title').value     = task.title;
-    document.getElementById('task-desc').value      = task.description || '';
-    document.getElementById('task-date').value      = task.date;
-    document.getElementById('task-deadline').value  = task.deadline || '';
+    document.getElementById('task-id').value    = taskId;
+    document.getElementById('task-title').value = task.title;
+    document.getElementById('task-desc').value  = task.description || '';
+    this.#dpDate.setValue(task.date);
+    this.#dpDeadline.setValue(task.deadline || '');
     document.getElementById('task-priority').value  = task.priority;
     document.getElementById('task-done').checked    = task.completed;
     document.getElementById('delete-task-btn').classList.remove('hidden');
@@ -124,8 +128,17 @@ class TaskController {
   }
 
   static #bindModal() {
+    // title 입력칸에서 Enter → 실수로 저장되지 않도록 막음 (명시적 버튼 클릭으로만 저장)
+    document.getElementById('task-title').addEventListener('keydown', e => {
+      if (e.key === 'Enter') e.preventDefault();
+    });
+
     document.getElementById('task-form').addEventListener('submit', async e => {
       e.preventDefault();
+      if (!document.getElementById('task-date').value) {
+        alert('일정 날짜를 선택해주세요.');
+        return;
+      }
       const user = UserModel.getCurrent();
       const data = {
         title:       document.getElementById('task-title').value.trim(),

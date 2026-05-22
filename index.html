@@ -20,47 +20,158 @@
       const db = createClient(SUPABASE_URL, SUPABASE_KEY);
     </script>
 
-    <!-- ===== LOGIN MODAL ===== -->
-    <div id="login-modal" class="modal-overlay active">
-      <div class="login-card">
-        <div class="login-logo">
-          <i class="fas fa-calendar-check"></i>
-          <h1>TeamScheduler</h1>
+    <!-- ===== LOGIN PAGE ===== -->
+    <div id="login-modal" class="login-page">
+      <!-- Left: brand panel -->
+      <div class="lp-left">
+        <div class="lp-brand">
+          <div class="lp-logo">
+            <i class="fas fa-calendar-check"></i>
+            <span>TeamScheduler</span>
+          </div>
+          <h2 class="lp-slogan">한 번에 관리하는<br /><em>팀 스케줄러</em></h2>
+          <p class="lp-desc">
+            팀원과 일정을 실시간으로 공유하고,<br />
+            마감일을 절대 놓치지 마세요.
+          </p>
+          <ul class="lp-features">
+            <li>
+              <span class="lp-feat-icon"
+                ><i class="fas fa-calendar-alt"></i
+              ></span>
+              <span>팀 캘린더로 일정을 한눈에 파악</span>
+            </li>
+            <li>
+              <span class="lp-feat-icon"
+                ><i class="fas fa-check-square"></i
+              ></span>
+              <span>할 일 관리와 완료 현황 추적</span>
+            </li>
+            <li>
+              <span class="lp-feat-icon"><i class="fas fa-bell"></i></span>
+              <span>마감 알림과 스마트 대시보드</span>
+            </li>
+          </ul>
         </div>
-        <p class="login-sub">팀과 함께하는 스마트 일정 관리</p>
-        <form id="login-form">
-          <div class="form-group">
-            <label>이름</label>
-            <input
-              type="text"
-              id="login-name"
-              placeholder="이름을 입력하세요"
-              required
-            />
+
+        <!-- Floating widget cards -->
+        <div class="lp-deco">
+          <div class="lp-deco-card lp-deco-1">
+            <i class="fas fa-circle-check"></i>
+            <span>오늘 일정 3건 완료</span>
           </div>
-          <div class="form-group">
-            <label>이메일</label>
-            <input
-              type="email"
-              id="login-email"
-              placeholder="이메일을 입력하세요"
-              required
-            />
+          <div class="lp-deco-card lp-deco-2">
+            <i class="fas fa-users"></i>
+            <span>팀원 5명이 함께하는 중</span>
           </div>
-          <button
-            type="submit"
-            class="btn-primary btn-full"
-            id="login-submit-btn"
-          >
-            시작하기
-          </button>
+          <div class="lp-deco-card lp-deco-3">
+            <i class="fas fa-chart-bar"></i>
+            <span>이번 주 달성률 87%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: form panel -->
+      <div class="lp-right">
+        <div class="lp-form-wrap">
+          <div class="lp-form-logo">
+            <i class="fas fa-calendar-check"></i>
+            <span>TeamScheduler</span>
+          </div>
+          <h2 class="lp-form-title">시작하기</h2>
+          <p class="lp-form-sub">이메일 또는 소셜 계정으로 로그인하세요</p>
+
           <p id="login-error" class="login-error hidden"></p>
+
+          <!-- Email OTP: Step 1 — enter email -->
+          <div id="otp-step-email">
+            <div class="form-group">
+              <label>이메일</label>
+              <input
+                type="email"
+                id="otp-email"
+                placeholder="이메일을 입력하세요"
+              />
+            </div>
+            <button
+              type="button"
+              class="btn-primary btn-full"
+              id="otp-send-btn"
+            >
+              인증 코드 받기
+            </button>
+          </div>
+
+          <!-- Email OTP: Step 2 — enter code -->
+          <div id="otp-step-verify" class="hidden">
+            <div class="otp-hint">
+              <i class="fas fa-envelope"></i>
+              <span
+                ><span id="otp-hint-email"></span>으로 6자리 코드를
+                발송했습니다.</span
+              >
+            </div>
+            <div class="form-group">
+              <label>인증 코드</label>
+              <input
+                type="text"
+                id="otp-token"
+                placeholder="123456"
+                maxlength="6"
+                inputmode="numeric"
+              />
+            </div>
+            <button
+              type="button"
+              class="btn-primary btn-full"
+              id="otp-verify-btn"
+            >
+              확인
+            </button>
+            <button
+              type="button"
+              class="btn-ghost btn-full otp-back-btn"
+              id="otp-back-btn"
+            >
+              ← 뒤로
+            </button>
+          </div>
+
           <div class="login-divider">또는</div>
-          <button type="button" class="btn-google" id="google-login-btn">
-            <i class="fab fa-google"></i>
-            Google로 계속하기
-          </button>
-        </form>
+
+          <!-- Social buttons: Google · Kakao · GitHub -->
+          <div class="social-btn-grid">
+            <button
+              type="button"
+              class="btn-social btn-google"
+              id="google-login-btn"
+            >
+              <i class="fab fa-google"></i>
+              <span>Google</span>
+            </button>
+            <button
+              type="button"
+              class="btn-social btn-kakao"
+              id="kakao-login-btn"
+            >
+              <i class="fas fa-comment-dots"></i>
+              <span>Kakao</span>
+            </button>
+            <button
+              type="button"
+              class="btn-social btn-github"
+              id="github-login-btn"
+            >
+              <i class="fab fa-github"></i>
+              <span>GitHub</span>
+            </button>
+          </div>
+
+          <p class="lp-terms">
+            로그인 시 <a href="#">이용약관</a> 및
+            <a href="#">개인정보처리방침</a>에 동의합니다.
+          </p>
+        </div>
       </div>
     </div>
 
@@ -138,6 +249,9 @@
             </div>
             <div class="nav-item" data-view="memo">
               <i class="fas fa-sticky-note"></i><span>메모장</span>
+            </div>
+            <div class="nav-item" data-view="timer">
+              <i class="fas fa-stopwatch"></i><span>타이머</span>
             </div>
           </div>
           <div class="nav-bottom">
@@ -642,6 +756,262 @@
           <div id="memo-board" class="memo-board"></div>
         </div>
 
+        <!-- TIMER VIEW -->
+        <div id="view-timer" class="view">
+          <div class="view-header">
+            <div>
+              <h2>타이머</h2>
+              <p class="view-sub">스톱워치 · 타이머 · 뽀모도로</p>
+            </div>
+          </div>
+
+          <!-- Tab bar -->
+          <div class="tv-tabs">
+            <button class="tv-tab" data-tvtab="alarm">
+              <i class="fas fa-bell"></i> 알람
+            </button>
+            <button class="tv-tab active" data-tvtab="stopwatch">
+              <i class="fas fa-stopwatch"></i> 스톱워치
+            </button>
+            <button class="tv-tab" data-tvtab="countdown">
+              <i class="fas fa-hourglass-half"></i> 타이머
+            </button>
+            <button class="tv-tab" data-tvtab="pomodoro">
+              <i class="fas fa-brain"></i> 뽀모도로
+            </button>
+          </div>
+
+          <!-- ── Stopwatch ── -->
+          <div class="tv-section" id="tv-stopwatch">
+            <div class="tv-ring-wrap">
+              <svg class="tv-ring-svg" viewBox="0 0 220 220">
+                <circle class="tv-ring-track" cx="110" cy="110" r="96" />
+                <circle
+                  class="tv-ring-prog"
+                  id="sw-ring"
+                  cx="110"
+                  cy="110"
+                  r="96"
+                />
+              </svg>
+              <div class="tv-ring-center">
+                <span class="tv-time" id="sw-time">00:00.0</span>
+                <span class="tv-label" id="sw-label">스톱워치</span>
+              </div>
+            </div>
+            <div class="tv-ctrl">
+              <button class="tv-btn tv-btn-main" id="sw-start">
+                <i class="fas fa-play"></i><span>시작</span>
+              </button>
+              <button class="tv-btn" id="sw-lap">
+                <i class="fas fa-flag"></i><span>랩</span>
+              </button>
+              <button class="tv-btn" id="sw-reset">
+                <i class="fas fa-redo"></i><span>초기화</span>
+              </button>
+            </div>
+            <div id="sw-laps" class="sw-laps"></div>
+          </div>
+
+          <!-- ── Countdown Timer ── -->
+          <div class="tv-section hidden" id="tv-countdown">
+            <div class="tv-ring-wrap">
+              <svg class="tv-ring-svg" viewBox="0 0 220 220">
+                <circle class="tv-ring-track" cx="110" cy="110" r="96" />
+                <circle
+                  class="tv-ring-prog"
+                  id="ct-ring"
+                  cx="110"
+                  cy="110"
+                  r="96"
+                />
+              </svg>
+              <div class="tv-ring-center">
+                <span class="tv-time" id="ct-time">00:00</span>
+                <span class="tv-label" id="ct-label">설정 후 시작</span>
+              </div>
+            </div>
+            <div class="ct-set-row">
+              <div class="ct-spin">
+                <button class="ct-spin-btn" data-field="ct-h" data-dir="1">
+                  ▲
+                </button>
+                <input
+                  type="number"
+                  id="ct-h"
+                  class="ct-input"
+                  value="0"
+                  min="0"
+                  max="23"
+                  placeholder="0"
+                />
+                <button class="ct-spin-btn" data-field="ct-h" data-dir="-1">
+                  ▼
+                </button>
+                <span class="ct-unit">시</span>
+              </div>
+              <div class="ct-spin">
+                <button class="ct-spin-btn" data-field="ct-m" data-dir="1">
+                  ▲
+                </button>
+                <input
+                  type="number"
+                  id="ct-m"
+                  class="ct-input"
+                  value="10"
+                  min="0"
+                  max="59"
+                  placeholder="0"
+                />
+                <button class="ct-spin-btn" data-field="ct-m" data-dir="-1">
+                  ▼
+                </button>
+                <span class="ct-unit">분</span>
+              </div>
+              <div class="ct-spin">
+                <button class="ct-spin-btn" data-field="ct-s" data-dir="1">
+                  ▲
+                </button>
+                <input
+                  type="number"
+                  id="ct-s"
+                  class="ct-input"
+                  value="0"
+                  min="0"
+                  max="59"
+                  placeholder="0"
+                />
+                <button class="ct-spin-btn" data-field="ct-s" data-dir="-1">
+                  ▼
+                </button>
+                <span class="ct-unit">초</span>
+              </div>
+            </div>
+            <div class="tv-ctrl">
+              <button class="tv-btn tv-btn-main" id="ct-start">
+                <i class="fas fa-play"></i><span>시작</span>
+              </button>
+              <button class="tv-btn" id="ct-reset">
+                <i class="fas fa-redo"></i><span>초기화</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ── Pomodoro ── -->
+          <div class="tv-section hidden" id="tv-pomodoro">
+            <div class="tv-ring-wrap">
+              <svg class="tv-ring-svg" viewBox="0 0 220 220">
+                <circle class="tv-ring-track" cx="110" cy="110" r="96" />
+                <circle
+                  class="tv-ring-prog"
+                  id="pm-ring"
+                  cx="110"
+                  cy="110"
+                  r="96"
+                />
+              </svg>
+              <div class="tv-ring-center">
+                <span class="pm-mode-badge" id="pm-mode-badge">집중</span>
+                <span class="tv-time" id="pm-time">25:00</span>
+                <span class="tv-label" id="pm-cycle">1 / 4 회차</span>
+              </div>
+            </div>
+            <div class="tv-ctrl">
+              <button class="tv-btn tv-btn-main" id="pm-start">
+                <i class="fas fa-play"></i><span>시작</span>
+              </button>
+              <button class="tv-btn" id="pm-skip">
+                <i class="fas fa-forward-step"></i><span>건너뛰기</span>
+              </button>
+              <button class="tv-btn" id="pm-reset">
+                <i class="fas fa-redo"></i><span>초기화</span>
+              </button>
+            </div>
+            <div class="pm-cfg card">
+              <h4><i class="fas fa-sliders-h"></i> 설정</h4>
+              <div class="pm-cfg-row">
+                <label
+                  >집중 시간
+                  <input
+                    type="number"
+                    id="pm-work-min"
+                    value="25"
+                    min="1"
+                    max="99"
+                  />
+                  분
+                </label>
+                <label
+                  >짧은 휴식
+                  <input
+                    type="number"
+                    id="pm-short-min"
+                    value="5"
+                    min="1"
+                    max="30"
+                  />
+                  분
+                </label>
+                <label
+                  >긴 휴식
+                  <input
+                    type="number"
+                    id="pm-long-min"
+                    value="15"
+                    min="1"
+                    max="60"
+                  />
+                  분
+                </label>
+                <label
+                  >긴 휴식 주기
+                  <input
+                    type="number"
+                    id="pm-long-every"
+                    value="4"
+                    min="2"
+                    max="10"
+                  />
+                  회
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Alarm ── -->
+          <div class="tv-section hidden" id="tv-alarm">
+            <div class="alarm-add-card card">
+              <h4><i class="fas fa-plus-circle"></i> 알람 추가</h4>
+              <div class="alarm-add-row">
+                <input
+                  type="time"
+                  id="alarm-time-input"
+                  class="alarm-time-input"
+                />
+                <input
+                  type="text"
+                  id="alarm-label-input"
+                  class="alarm-label-input"
+                  placeholder="알람 이름 (선택사항)"
+                  maxlength="20"
+                />
+                <button
+                  class="tv-btn tv-btn-main alarm-add-btn"
+                  id="alarm-add-btn"
+                >
+                  <i class="fas fa-plus"></i><span>추가</span>
+                </button>
+              </div>
+            </div>
+            <div id="alarm-list" class="alarm-list"></div>
+            <p class="alarm-hint">
+              <i class="fas fa-info-circle"></i>
+              알람은 이 페이지를 열어 둔 동안만 동작합니다. 브라우저 알림 권한을
+              허용하면 더 정확히 알림을 받을 수 있습니다.
+            </p>
+          </div>
+        </div>
+
         <!-- SETTINGS VIEW -->
         <div id="view-settings" class="view">
           <div class="view-header"><h2>설정</h2></div>
@@ -843,7 +1213,35 @@
           <div class="form-row">
             <div class="form-group">
               <label>일정 날짜 *</label>
-              <input type="date" id="task-date" required />
+              <div class="dp-wrap" id="dp-wrap-date">
+                <button
+                  type="button"
+                  class="dp-trigger"
+                  data-placeholder="날짜를 선택하세요"
+                >
+                  <i class="fas fa-calendar-alt"></i>
+                  <span class="dp-display dp-placeholder"
+                    >날짜를 선택하세요</span
+                  >
+                </button>
+                <input type="hidden" id="task-date" />
+                <div class="dp-popup hidden">
+                  <div class="dp-head">
+                    <button type="button" class="dp-prev">
+                      <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="dp-label"></span>
+                    <button type="button" class="dp-next">
+                      <i class="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                  <div class="dp-weekdays">
+                    <span>일</span><span>월</span><span>화</span><span>수</span
+                    ><span>목</span><span>금</span><span>토</span>
+                  </div>
+                  <div class="dp-days"></div>
+                </div>
+              </div>
             </div>
             <div class="form-group">
               <label>우선순위</label>
@@ -856,7 +1254,38 @@
           </div>
           <div class="form-group">
             <label>마감일 (데드라인)</label>
-            <input type="date" id="task-deadline" />
+            <div class="dp-wrap" id="dp-wrap-deadline">
+              <div class="dp-input-row">
+                <button
+                  type="button"
+                  class="dp-trigger"
+                  data-placeholder="선택 안함"
+                >
+                  <i class="fas fa-calendar-alt"></i>
+                  <span class="dp-display dp-placeholder">선택 안함</span>
+                </button>
+                <button type="button" class="dp-clear-btn" title="선택 해제">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <input type="hidden" id="task-deadline" />
+              <div class="dp-popup hidden">
+                <div class="dp-head">
+                  <button type="button" class="dp-prev">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <span class="dp-label"></span>
+                  <button type="button" class="dp-next">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+                <div class="dp-weekdays">
+                  <span>일</span><span>월</span><span>화</span><span>수</span
+                  ><span>목</span><span>금</span><span>토</span>
+                </div>
+                <div class="dp-days"></div>
+              </div>
+            </div>
             <p class="form-hint">비워두면 일정 날짜가 마감일로 사용됩니다</p>
           </div>
           <div class="form-group">
@@ -1042,6 +1471,7 @@
     <script src="js/views/HeaderView.js"></script>
     <script src="js/views/CalendarView.js"></script>
     <script src="js/views/TaskView.js"></script>
+    <script src="js/controllers/DatePicker.js"></script>
     <script src="js/controllers/TaskController.js"></script>
     <script src="js/controllers/CalendarController.js"></script>
     <script src="js/controllers/TeamController.js"></script>
@@ -1049,6 +1479,7 @@
     <script src="js/controllers/SettingsController.js"></script>
     <script src="js/controllers/CalculatorController.js"></script>
     <script src="js/controllers/MemoController.js"></script>
+    <script src="js/controllers/TimerController.js"></script>
     <script src="js/controllers/AppController.js"></script>
     <script src="js/app.js"></script>
   </body>

@@ -26,9 +26,13 @@ class SettingsController {
       const name  = document.getElementById('set-name').value.trim();
       const email = document.getElementById('set-email').value.trim();
       if (!name || !email) return;
-      await UserModel.update({ name, email });
-      HeaderView.render(UserModel.getCurrent());
-      this.#showSaveToast();
+      try {
+        await UserModel.update({ name, email });
+        HeaderView.render(UserModel.getCurrent());
+        this.#showSaveToast();
+      } catch (err) {
+        this.#showSaveToast(`저장 실패: ${err.message}`);
+      }
     };
   }
 
@@ -98,16 +102,18 @@ class SettingsController {
 
   // ---------- save toast ----------
 
-  static #showSaveToast() {
+  static #showSaveToast(msg = '저장되었습니다') {
     let toast = document.getElementById('save-toast');
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'save-toast';
       toast.className = 'save-toast';
-      toast.innerHTML = '<i class="fas fa-check-circle"></i> 저장되었습니다';
       document.body.appendChild(toast);
     }
+    const isError = msg !== '저장되었습니다';
+    toast.innerHTML = `<i class="fas fa-${isError ? 'exclamation-circle' : 'check-circle'}"></i> ${msg}`;
+    toast.classList.toggle('save-toast--error', isError);
     toast.classList.add('visible');
-    setTimeout(() => toast.classList.remove('visible'), 2200);
+    setTimeout(() => toast.classList.remove('visible', 'save-toast--error'), 2200);
   }
 }

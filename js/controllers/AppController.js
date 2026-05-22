@@ -45,6 +45,7 @@ class AppController {
       settings:   () => SettingsController.init(),
       calculator: () => CalculatorController.init(),
       memo:       () => MemoController.init(),
+      timer:      () => TimerController.init(),
     };
     controllers[view]?.();
   }
@@ -72,43 +73,83 @@ class AppController {
   }
 
   static #bindLogin() {
-    const form  = document.getElementById('login-form');
-    const btn   = document.getElementById('login-submit-btn');
-    const gBtn  = document.getElementById('google-login-btn');
     const errEl = document.getElementById('login-error');
+    this.#bindEmailOTP(errEl);
+    this.#bindSocialBtn('google-login-btn', () => UserModel.loginWithGoogle(), errEl);
+    this.#bindSocialBtn('kakao-login-btn',  () => UserModel.loginWithKakao(),  errEl);
+    this.#bindSocialBtn('github-login-btn', () => UserModel.loginWithGithub(), errEl);
+  }
 
-    // Email / name login
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
-      btn.disabled    = true;
-      btn.textContent = '연결 중...';
+  static #bindEmailOTP(errEl) {
+    const emailInput = document.getElementById('otp-email');
+    const sendBtn    = document.getElementById('otp-send-btn');
+    const verifyBtn  = document.getElementById('otp-verify-btn');
+    const backBtn    = document.getElementById('otp-back-btn');
+    const tokenInput = document.getElementById('otp-token');
+    const stepEmail  = document.getElementById('otp-step-email');
+    const stepVerify = document.getElementById('otp-step-verify');
+    const hintSpan   = document.getElementById('otp-hint-email');
+
+    sendBtn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      if (!email) return;
+      sendBtn.disabled    = true;
+      sendBtn.textContent = '발송 중...';
       errEl.classList.add('hidden');
       try {
-        const name  = document.getElementById('login-name').value.trim();
-        const email = document.getElementById('login-email').value.trim();
-        const user  = await UserModel.login(name, email);
-        this.#showApp(user);
+        await UserModel.sendEmailOTP(email);
+        hintSpan.textContent = email;
+        stepEmail.classList.add('hidden');
+        stepVerify.classList.remove('hidden');
+        tokenInput.focus();
       } catch (err) {
-        console.error('Login error:', err);
-        errEl.textContent = `연결 실패: ${err.message}`;
+        errEl.textContent = `코드 발송 실패: ${err.message}`;
         errEl.classList.remove('hidden');
       } finally {
-        btn.disabled    = false;
-        btn.textContent = '시작하기';
+        sendBtn.disabled    = false;
+        sendBtn.textContent = '인증 코드 받기';
       }
     });
 
-    // Google OAuth login
-    gBtn.addEventListener('click', async () => {
-      gBtn.disabled = true;
+    backBtn.addEventListener('click', () => {
+      stepVerify.classList.add('hidden');
+      stepEmail.classList.remove('hidden');
+      tokenInput.value = '';
+      errEl.classList.add('hidden');
+    });
+
+    verifyBtn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      const token = tokenInput.value.trim();
+      if (!token) return;
+      verifyBtn.disabled    = true;
+      verifyBtn.textContent = '확인 중...';
       errEl.classList.add('hidden');
       try {
-        await UserModel.loginWithGoogle();
-        // Browser redirects — nothing below this runs.
+        const user = await UserModel.verifyEmailOTP(email, token);
+        this.#showApp(user);
       } catch (err) {
-        errEl.textContent = `Google 로그인 실패: ${err.message}`;
+        errEl.textContent = `인증 실패: ${err.message}`;
         errEl.classList.remove('hidden');
-        gBtn.disabled = false;
+      } finally {
+        verifyBtn.disabled    = false;
+        verifyBtn.textContent = '확인';
+      }
+    });
+  }
+
+  static #bindSocialBtn(btnId, loginFn, errEl) {
+    const btn = document.getElementById(btnId);
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      errEl.classList.add('hidden');
+      try {
+        await loginFn();
+        // OAuth providers redirect — nothing below runs for them.
+      } catch (err) {
+        errEl.textContent = `로그인 실패: ${err.message}`;
+        errEl.classList.remove('hidden');
+        btn.disabled = false;
       }
     });
   }
@@ -146,7 +187,6 @@ class AppController {
       UserModel.logout();      // clear localStorage session (email login)
       document.getElementById('app').classList.add('hidden');
       document.getElementById('login-modal').classList.remove('hidden');
-      document.getElementById('login-form').reset();
       document.getElementById('day-panel').classList.add('hidden');
     });
   }

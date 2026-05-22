@@ -44,22 +44,39 @@ class UserModel {
     localStorage.removeItem(this.#CUR);
   }
 
-  // ---- Google OAuth ----
+  // ---- Supabase Auth helpers ----
 
-  static async loginWithGoogle() {
+  // OAuth redirect (Google / Kakao / Apple) — shared redirect handler.
+  static async #oauthRedirect(provider) {
     const { error } = await db.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + window.location.pathname,
-      },
+      provider,
+      options: { redirectTo: window.location.origin + window.location.pathname },
     });
     if (error) throw new Error(error.message);
-    // Page redirects — nothing after this runs.
   }
 
-  // Called after OAuth redirect. authUser comes from db.auth.getSession().
-  // Syncs the Google account into our custom users table using the same
-  // login() path so existing data is preserved when emails match.
+  static async loginWithGoogle() { return this.#oauthRedirect('google'); }
+  static async loginWithKakao()  { return this.#oauthRedirect('kakao');  }
+  static async loginWithGithub() { return this.#oauthRedirect('github'); }
+
+  // Email OTP — Step 1: send 6-digit code to inbox.
+  static async sendEmailOTP(email) {
+    const { error } = await db.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  // Email OTP — Step 2: verify the code the user typed.
+  static async verifyEmailOTP(email, token) {
+    const { data, error } = await db.auth.verifyOtp({ email, token, type: 'email' });
+    if (error) throw new Error(error.message);
+    return this.handleOAuthCallback(data.user);
+  }
+
+  // Called after any Supabase Auth session (OAuth redirect or OTP verify).
+  // Syncs the auth user into our custom users table; preserves data when emails match.
   static async handleOAuthCallback(authUser) {
     const email = authUser.email;
     const name  = authUser.user_metadata?.full_name
@@ -70,8 +87,9 @@ class UserModel {
 
   static async update(patch) {
     const current = this.getCurrent();
-    const { data } = await db
+    const { data, error } = await db
       .from('users').update(patch).eq('id', current.id).select().single();
+    if (error) throw new Error(error.message);
     this.#setCurrent(data);
     return data;
   }

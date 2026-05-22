@@ -71,7 +71,7 @@ class MemoController {
     const col = this.#COLORS.find(c => c.id === memo.color) || this.#COLORS[0];
     const el  = document.createElement('div');
     el.className = 'memo-note';
-    el.setAttribute('draggable', 'true');
+    // draggable은 핸들에만 — 전체에 두면 textarea 입력/선택이 방해됨
     el.dataset.memoId = memo.id;
     el.style.setProperty('--note-bg',     col.bg);
     el.style.setProperty('--note-border', col.border);
@@ -79,7 +79,7 @@ class MemoController {
 
     el.innerHTML = `
       <div class="memo-note-top">
-        <span class="memo-drag-handle" title="드래그로 순서 변경">
+        <span class="memo-drag-handle" draggable="true" title="드래그로 순서 변경">
           <i class="fas fa-grip-vertical"></i>
         </span>
         <button class="memo-pin-btn" title="맨 위로 이동">
@@ -146,19 +146,29 @@ class MemoController {
     this.#bindResize(el, memo);
 
     // ---------- drag & drop ----------
+    // dragstart/dragend는 핸들에만 → textarea 입력이 방해받지 않음
 
-    el.addEventListener('dragstart', e => {
+    const handle   = el.querySelector('.memo-drag-handle');
+    const textarea = el.querySelector('.memo-textarea');
+
+    // 텍스트 선택/입력 시 부모 drag 이벤트가 간섭하지 않도록 차단
+    textarea.addEventListener('mousedown', e => e.stopPropagation());
+    textarea.addEventListener('keydown',   e => e.stopPropagation());
+
+    handle.addEventListener('dragstart', e => {
       this.#dragSrcId = memo.id;
       el.classList.add('memo-dragging');
       e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', memo.id); // Firefox 필수
     });
 
-    el.addEventListener('dragend', () => {
+    handle.addEventListener('dragend', () => {
       el.classList.remove('memo-dragging');
       document.querySelectorAll('.memo-note')
         .forEach(n => n.classList.remove('memo-drag-over'));
     });
 
+    // 드롭 대상 이벤트는 노트 전체에 유지
     el.addEventListener('dragover', e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
