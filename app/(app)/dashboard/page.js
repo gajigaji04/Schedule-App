@@ -136,7 +136,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 통계 카드 4개 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 20 }}>
+      <div className="stats-row">
         <StatCard icon="fas fa-list-check" iconColor="indigo" num={stats.total}   label="오늘 할일" />
         <StatCard icon="fas fa-circle-check" iconColor="green" num={stats.done}   label="완료" />
         <StatCard icon="fas fa-clock"        iconColor="amber" num={stats.pending} label="미완료" />
@@ -144,7 +144,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 생산성 카드 3개 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="productivity-row">
         <ProdCard
           icon="fas fa-chart-line" iconColor="var(--indigo-600)"
           num={productivity.rate !== null ? `${productivity.rate}%` : '-'}
@@ -164,7 +164,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 오늘 할일 + 미니 캘린더 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 20 }}>
+      <div className="dash-grid">
         {/* 오늘 할일 */}
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>

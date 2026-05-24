@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# TeamScheduler
 
-## Getting Started
+팀 일정, 할일, 메모, 타이머를 하나의 앱에서 관리하는 올인원 스케줄러입니다.
 
-First, run the development server:
+## 주요 기능
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **대시보드** — 오늘의 할일, 팀 현황, 마감 임박 항목 한눈에 확인
+- **캘린더** — 월간/주간/연간 뷰, 마감일 스팬 바, 날짜별 할일 표시
+- **내 할일** — 우선순위·태그·마감일 관리, 팀 공유
+- **팀 관리** — 팀 생성, 멤버 초대, 팀 할일 공유
+- **메모장** — Markdown 에디터, 분할 뷰(편집·미리보기), 찾기/바꾸기
+- **타이머** — 알람, 카운트다운, 뽀모도로(커스텀 커리큘럼)
+- **계산기** — 기본 및 공학용 계산기
+- **테마** — 빨/주/노/초/파/남/보 7가지 색상 + 커스텀 컬러, 라이트/다크/자동 모드
+
+## 기술 스택
+
+| 분류 | 기술 |
+|------|------|
+| 프레임워크 | Next.js 16 (App Router) |
+| 스타일 | Tailwind CSS v4 |
+| 백엔드/인증 | Supabase (OTP 이메일 · Google · GitHub · Kakao OAuth) |
+| 아이콘 | Font Awesome 6.5 |
+
+## 시작하기
+
+### 환경 변수 설정
+
+프로젝트 루트에 `.env.local` 파일을 생성하고 아래 값을 채워 넣으세요.
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 개발 서버 실행
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+브라우저에서 [http://localhost:3000](http://localhost:3000) 을 열면 앱을 확인할 수 있습니다.
 
-## Learn More
+### 빌드
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+npm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 프로젝트 구조
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/
+  (app)/          # 인증된 사용자 영역 (AppShell 레이아웃)
+    dashboard/
+    calendar/
+    tasks/
+    teams/
+    memo/
+    timer/
+    calculator/
+    settings/
+  login/          # 로그인 페이지
+  globals.css     # 전역 스타일 (디자인 토큰, 컴포넌트)
+components/
+  layout/         # AppShell, AppHeader, AppSidebar, BottomNav
+  ui/             # FloatingAIPanel, FloatingChatPanel 등
+lib/
+  supabase.js     # Supabase 클라이언트
+  contexts/       # AuthContext
+  utils/          # themeColor, 기타 유틸
+models/           # DB 쿼리 함수 (task, team, user)
+```
 
-## Deploy on Vercel
+## 라이선스
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+개인·학습 목적으로 자유롭게 사용 가능합니다.

@@ -232,12 +232,17 @@ function MonthView({ year, month, tasks, todayStr, onDayClick }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const prevDays    = new Date(year, month, 0).getDate();
 
-  // taskMap: tasks that START on a date
-  const taskMap = {};
-  tasks.forEach(t => { if (!taskMap[t.date]) taskMap[t.date] = []; taskMap[t.date].push(t); });
-
-  // spanning tasks (deadline > start date)
+  // spanning tasks (deadline > start date) — shown as bars only
   const spanTasks = tasks.filter(t => t.deadline && t.deadline > t.date);
+  const spanIds   = new Set(spanTasks.map(t => t.id));
+
+  // taskMap: non-spanning tasks by start date
+  const taskMap = {};
+  tasks.forEach(t => {
+    if (spanIds.has(t.id)) return;
+    if (!taskMap[t.date]) taskMap[t.date] = [];
+    taskMap[t.date].push(t);
+  });
 
   const cells = [];
   for (let i = 0; i < firstDay; i++) {
@@ -262,6 +267,7 @@ function MonthView({ year, month, tasks, todayStr, onDayClick }) {
           <div key={d} style={{
             padding: '8px 0', textAlign: 'center', fontSize: '0.78rem', fontWeight: 600,
             color: di === 0 ? 'var(--red-500)' : di === 6 ? 'var(--indigo-600)' : 'var(--text-sub)',
+            borderRight: di < 6 ? '1px solid var(--border)' : 'none',
             borderBottom: '1px solid var(--border)', background: 'var(--surface)',
           }}>{d}</div>
         ))}
@@ -351,13 +357,15 @@ function MonthView({ year, month, tasks, todayStr, onDayClick }) {
 
                     {cellTasks.slice(0, 2).map(t => (
                       <div key={t.id} style={{
-                        fontSize: '0.7rem', padding: '2px 5px', borderRadius: 3, marginBottom: 2,
-                        background: t.color || 'var(--indigo-500)', color: '#fff',
+                        fontSize: '0.68rem', padding: '1px 4px', borderRadius: 2, marginBottom: 2,
+                        borderLeft: `3px solid ${t.color || 'var(--indigo-500)'}`,
+                        background: 'transparent',
+                        color: 'var(--text)',
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                         textDecoration: t.completed ? 'line-through' : 'none',
-                        opacity: t.completed ? 0.6 : 1,
+                        opacity: t.completed ? 0.55 : 1,
+                        lineHeight: '1.5',
                       }}>
-                        {t.deadline && t.deadline > t.date && <span style={{ marginRight: 3 }}>→</span>}
                         {t.title}
                       </div>
                     ))}
@@ -386,13 +394,13 @@ function WeekView({ weekStart, tasks, todayStr, onDayClick }) {
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', minHeight: 400 }}>
-      {weekDays.map(({ d, ds }) => {
+      {weekDays.map(({ d, ds }, idx) => {
         const isToday = ds === todayStr;
         const dayTasks = taskMap[ds] || [];
         return (
           <div key={ds} onClick={() => onDayClick(ds)}
             style={{
-              borderRight: '1px solid var(--border)', cursor: 'pointer',
+              borderRight: idx < 6 ? '1px solid var(--border)' : 'none', cursor: 'pointer',
               background: isToday ? 'rgba(99,102,241,0.04)' : 'var(--surface)',
             }}
           >

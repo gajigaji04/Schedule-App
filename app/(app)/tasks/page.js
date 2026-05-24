@@ -70,18 +70,12 @@ export default function TasksPage() {
       </div>
 
       {/* 필터 탭 */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+      <div className="filter-bar">
         {FILTERS.map(f => (
           <button
             key={f.key}
+            className={`filter-btn${filter === f.key ? ' active' : ''}`}
             onClick={() => setFilter(f.key)}
-            style={{
-              padding: '6px 14px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-              fontSize: '0.85rem', fontWeight: 500, border: '1px solid var(--border)',
-              background: filter === f.key ? 'var(--indigo-600)' : 'var(--surface)',
-              color: filter === f.key ? '#fff' : 'var(--text)',
-              transition: 'background 150ms',
-            }}
           >
             {f.label}
             <span style={{ marginLeft: 6, opacity: 0.7 }}>

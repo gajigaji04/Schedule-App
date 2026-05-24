@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { getTeamsByUser, createTeam, addMember, deleteTeam, getTeamMembers } from '@/models/teamModel';
+import { getTeamsByUser, createTeam, addMember, deleteTeam } from '@/models/teamModel';
 import { getTasksByUser } from '@/models/taskModel';
 
 export default function TeamsPage() {
@@ -75,7 +75,7 @@ export default function TeamsPage() {
           <button className="btn-primary" onClick={() => setShowCreate(true)}>팀 만들기</button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+        <div className="teams-grid">
           {teams.map(team => (
             <TeamCard
               key={team.id}

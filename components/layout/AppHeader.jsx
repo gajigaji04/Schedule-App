@@ -70,13 +70,14 @@ export default function AppHeader({ onToggleSidebar }) {
   const avatar = user?.name?.[0]?.toUpperCase() || 'U';
 
   const deadlineLabel = (ds) => {
+    if (!ds) return { text: '마감일 없음', color: 'var(--text-sub)' };
     const now = new Date();
     const today    = toDateStr(now);
     const tomorrow = toDateStr(new Date(now.getTime() + 86400000));
-    if (ds < today)    return { text: '기한 초과', color: 'var(--red-600)' };
-    if (ds === today)  return { text: '오늘 마감', color: 'var(--red-500)' };
-    if (ds === tomorrow) return { text: '내일 마감', color: 'var(--amber-500)' };
-    return { text: ds, color: 'var(--text-sub)' };
+    if (ds < today)    return { text: `기한 초과 · ${ds}`, color: 'var(--red-600)' };
+    if (ds === today)  return { text: '오늘 마감',          color: 'var(--red-500)' };
+    if (ds === tomorrow) return { text: '내일 마감',        color: 'var(--red-500)' };
+    return { text: ds,                                       color: 'var(--red-500)' };
   };
 
   return (
@@ -150,7 +151,7 @@ export default function AppHeader({ onToggleSidebar }) {
                     임박한 마감이 없습니다 🎉
                   </div>
                 ) : deadlines.map(t => {
-                  const lbl = deadlineLabel(t.deadline);
+                  const lbl = deadlineLabel(t.deadline || t.date);
                   return (
                     <div
                       key={t.id}

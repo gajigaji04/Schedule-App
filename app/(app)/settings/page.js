@@ -1,20 +1,23 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { updateProfile } from '@/models/userModel';
 import { PALETTES, applyColorPalette } from '@/lib/utils/themeColor';
 
 export default function SettingsPage() {
   const { user, setUser } = useAuth();
-  const [name, setName]       = useState(user?.name || '');
-  const [saving, setSaving]   = useState(false);
-  const [saved, setSaved]     = useState(false);
-  const [mode, setMode]       = useState('auto');
+  const [name, setName]         = useState(user?.name || '');
+  const [saving, setSaving]     = useState(false);
+  const [saved, setSaved]       = useState(false);
+  const [mode, setMode]         = useState('auto');
   const [colorKey, setColorKey] = useState('indigo');
+  const [customHex, setCustomHex] = useState('#4f46e5');
+  const colorInputRef = useRef(null);
 
   useEffect(() => {
     setMode(localStorage.getItem('ts_theme') || 'auto');
     setColorKey(localStorage.getItem('ts_color') || 'indigo');
+    setCustomHex(localStorage.getItem('ts_color_custom') || '#4f46e5');
   }, []);
 
   function applyMode(m) {
@@ -27,7 +30,13 @@ export default function SettingsPage() {
 
   function handleColor(key) {
     setColorKey(key);
-    applyColorPalette(key);
+    applyColorPalette(key, key === 'custom' ? customHex : undefined);
+  }
+
+  function handleCustomHex(hex) {
+    setCustomHex(hex);
+    setColorKey('custom');
+    applyColorPalette('custom', hex);
   }
 
   async function handleSaveProfile(e) {
@@ -78,7 +87,7 @@ export default function SettingsPage() {
       {/* 테마 색상 */}
       <section className="card" style={{ marginBottom: 20 }}>
         <SectionTitle icon="fas fa-palette" label="테마 색상" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 10 }}>
+        <div className="settings-color-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
           {Object.entries(PALETTES).map(([key, p]) => (
             <button
               key={key}
@@ -102,11 +111,49 @@ export default function SettingsPage() {
               </span>
             </button>
           ))}
+
+          {/* 커스텀 색상 */}
+          <button
+            onClick={() => colorInputRef.current?.click()}
+            title="커스텀 색상"
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              padding: '10px 6px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+              border: `2px solid ${colorKey === 'custom' ? customHex : 'var(--border)'}`,
+              background: colorKey === 'custom' ? 'var(--indigo-50)' : 'var(--surface)',
+              position: 'relative',
+            }}
+          >
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: `conic-gradient(red, orange, yellow, green, blue, indigo, violet, red)`,
+              outline: colorKey === 'custom' ? `3px solid ${customHex}` : 'none',
+              outlineOffset: 2,
+            }} />
+            <span style={{ fontSize: '0.72rem', color: 'var(--text)', fontWeight: colorKey === 'custom' ? 700 : 400 }}>
+              커스텀
+            </span>
+            <input
+              ref={colorInputRef}
+              type="color"
+              value={customHex}
+              onChange={e => handleCustomHex(e.target.value)}
+              style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'none' }}
+            />
+          </button>
         </div>
+
+        {/* 현재 선택 색상 미리보기 */}
+        {colorKey === 'custom' && (
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.82rem', color: 'var(--text-sub)' }}>
+            <div style={{ width: 20, height: 20, borderRadius: 4, background: customHex, flexShrink: 0 }} />
+            <span>선택된 색상: <strong style={{ color: 'var(--text)' }}>{customHex}</strong></span>
+          </div>
+        )}
       </section>
 
-      {/* 다크 모드 */}
-      <section className="card" style={{ marginBottom: 20 }}>
+      {/* 화면 모드 */}
+      <section className="card">
         <SectionTitle icon="fas fa-moon" label="화면 모드" />
         <div style={{ display: 'flex', gap: 10 }}>
           {[
@@ -130,14 +177,6 @@ export default function SettingsPage() {
           ))}
         </div>
       </section>
-
-      {/* 앱 정보 */}
-      <section className="card">
-        <SectionTitle icon="fas fa-info-circle" label="앱 정보" />
-        <InfoRow label="앱 이름" val="TeamScheduler" />
-        <InfoRow label="버전"   val="2.0.0 (Next.js)" />
-        <InfoRow label="스택"   val="Next.js 16 + Tailwind v4 + Supabase" />
-      </section>
     </div>
   );
 }
@@ -147,14 +186,5 @@ function SectionTitle({ icon, label }) {
     <h3 style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
       <i className={icon} style={{ color: 'var(--indigo-600)' }} /> {label}
     </h3>
-  );
-}
-
-function InfoRow({ label, val }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: '0.88rem' }}>
-      <span style={{ color: 'var(--text-sub)' }}>{label}</span>
-      <span style={{ color: 'var(--text)' }}>{val}</span>
-    </div>
   );
 }
