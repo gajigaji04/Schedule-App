@@ -28,7 +28,8 @@ export async function getTasksByDateRange(userId, start, end) {
 }
 
 export async function createTask(task) {
-  const { data, error } = await db.from('tasks').insert(task).select().single();
+  const payload = { id: crypto.randomUUID(), ...task };
+  const { data, error } = await db.from('tasks').insert(payload).select().single();
   if (error) throw new Error(error.message);
   return data;
 }

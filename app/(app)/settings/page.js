@@ -1,10 +1,17 @@
 'use client';
+import { Suspense } from 'react';
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { updateProfile } from '@/models/userModel';
 import { PALETTES, applyColorPalette } from '@/lib/utils/themeColor';
+import { db, getAuthToken } from '@/lib/supabase';
 
-export default function SettingsPage() {
+export default function SettingsPageWrapper() {
+  return <Suspense><SettingsPage /></Suspense>;
+}
+
+function SettingsPage() {
   const { user, setUser } = useAuth();
   const [name, setName]         = useState(user?.name || '');
   const [saving, setSaving]     = useState(false);
@@ -13,12 +20,37 @@ export default function SettingsPage() {
   const [colorKey, setColorKey] = useState('indigo');
   const [customHex, setCustomHex] = useState('#4f46e5');
   const colorInputRef = useRef(null);
+  const searchParams = useSearchParams();
+  const [gcalConnected, setGcalConnected] = useState(false);
+  const [gcalLoading, setGcalLoading]     = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    db.from('users')
+      .select('google_access_token')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => setGcalConnected(!!data?.google_access_token));
+
+    const gcalParam = searchParams.get('gcal');
+    if (gcalParam === 'connected') setGcalConnected(true);
+    if (gcalParam === 'error') alert('Google 캘린더 연동 중 오류가 발생했습니다.');
+  }, [user?.id]);
 
   useEffect(() => {
     setMode(localStorage.getItem('ts_theme') || 'auto');
-    setColorKey(localStorage.getItem('ts_color') || 'indigo');
-    setCustomHex(localStorage.getItem('ts_color_custom') || '#4f46e5');
-  }, []);
+    const uid = user?.id;
+    setColorKey(
+      (uid && localStorage.getItem(`ts_color_${uid}`))
+        || localStorage.getItem('ts_color')
+        || 'indigo'
+    );
+    setCustomHex(
+      (uid && localStorage.getItem(`ts_color_custom_${uid}`))
+        || localStorage.getItem('ts_color_custom')
+        || '#4f46e5'
+    );
+  }, [user]);
 
   function applyMode(m) {
     localStorage.setItem('ts_theme', m);
@@ -30,13 +62,13 @@ export default function SettingsPage() {
 
   function handleColor(key) {
     setColorKey(key);
-    applyColorPalette(key, key === 'custom' ? customHex : undefined);
+    applyColorPalette(key, key === 'custom' ? customHex : undefined, user?.id);
   }
 
   function handleCustomHex(hex) {
     setCustomHex(hex);
     setColorKey('custom');
-    applyColorPalette('custom', hex);
+    applyColorPalette('custom', hex, user?.id);
   }
 
   async function handleSaveProfile(e) {
@@ -153,7 +185,7 @@ export default function SettingsPage() {
       </section>
 
       {/* 화면 모드 */}
-      <section className="card">
+      <section className="card" style={{ marginBottom: 20 }}>
         <SectionTitle icon="fas fa-moon" label="화면 모드" />
         <div style={{ display: 'flex', gap: 10 }}>
           {[
@@ -176,6 +208,63 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
+      </section>
+
+      {/* Google 캘린더 연동 */}
+      <section className="card">
+        <SectionTitle icon="fab fa-google" label="Google 캘린더 연동" />
+        {gcalConnected ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.88rem', color: 'var(--green-600)' }}>
+              <i className="fas fa-circle-check" />
+              <span>Google 캘린더가 연동되어 있습니다</span>
+            </div>
+            <button
+              className="btn-sm"
+              disabled={gcalLoading}
+              onClick={async () => {
+                setGcalLoading(true);
+                const token = await getAuthToken();
+                await fetch('/api/google/disconnect', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                  },
+                  body: JSON.stringify({ userId: user.id }),
+                });
+                setGcalConnected(false);
+                setGcalLoading(false);
+              }}
+              style={{
+                alignSelf: 'flex-start', padding: '8px 16px', borderRadius: 'var(--radius-sm)',
+                border: '1.5px solid var(--border)', background: 'var(--surface)',
+                color: 'var(--text)', cursor: 'pointer', fontSize: '0.84rem',
+              }}
+            >
+              <i className="fas fa-link-slash" style={{ marginRight: 6 }} />
+              {gcalLoading ? '연동 해제 중...' : '연동 해제'}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-sub)', margin: 0 }}>
+              Google 캘린더를 연동하면 일정을 앱에서 함께 볼 수 있습니다.
+            </p>
+            <button
+              className="btn-primary btn-sm"
+              disabled={gcalLoading}
+              onClick={() => {
+                setGcalLoading(true);
+                window.location.href = `/api/google/auth?userId=${user.id}`;
+              }}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              <i className="fab fa-google" style={{ marginRight: 6 }} />
+              {gcalLoading ? '연결 중...' : 'Google 캘린더 연결'}
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );

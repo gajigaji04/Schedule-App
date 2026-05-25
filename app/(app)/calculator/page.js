@@ -28,6 +28,10 @@ function ScientificCalc() {
         .replace(/\^/g,     '**')
         .replace(/π/g,      'Math.PI')
         .replace(/e(?!\d)/g,'Math.E');
+      // Block any non-math identifiers that survived transformation
+      if (/(?:fetch|XMLHttpRequest|document|window|globalThis|process|require|import|eval|Function|localStorage|sessionStorage|cookie)\b/.test(safe)) {
+        setResult('오류'); return;
+      }
       // eslint-disable-next-line no-new-func
       const fn = new Function('toRad', `"use strict"; return (${safe})`);
       const r  = fn(toRad);

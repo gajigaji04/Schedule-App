@@ -1,8 +1,10 @@
 'use client';
+import { Suspense } from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { getTasksByDateRange, getTasksByDate, toggleComplete } from '@/models/taskModel';
+import { getAuthToken } from '@/lib/supabase';
 import TaskModal from '@/components/task/TaskModal';
 
 const DAYS = ['일','월','화','수','목','금','토'];
@@ -12,7 +14,11 @@ function toDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-export default function CalendarPage() {
+export default function CalendarPageWrapper() {
+  return <Suspense><CalendarPage /></Suspense>;
+}
+
+function CalendarPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const now = new Date();
@@ -26,10 +32,11 @@ export default function CalendarPage() {
     d.setDate(d.getDate() - d.getDay());
     return d;
   });
-  const [tasks, setTasks]       = useState([]);
-  const [dayPanel, setDayPanel] = useState(null); // dateStr | null
-  const [dayTasks, setDayTasks] = useState([]);
-  const [modal, setModal]       = useState(null);
+  const [tasks, setTasks]         = useState([]);
+  const [gcalEvents, setGcalEvents] = useState([]);
+  const [dayPanel, setDayPanel]   = useState(null); // dateStr | null
+  const [dayTasks, setDayTasks]   = useState([]);
+  const [modal, setModal]         = useState(null);
 
   const todayStr = toDateStr(now);
 
@@ -50,7 +57,35 @@ export default function CalendarPage() {
     setTasks(data);
   }, [user, mode, year, month, weekStart]);
 
+  const loadGcalEvents = useCallback(async () => {
+    if (!user?.id) return;
+    let timeMin, timeMax;
+    if (mode === 'year') {
+      timeMin = new Date(year, 0, 1).toISOString();
+      timeMax = new Date(year, 11, 31, 23, 59, 59).toISOString();
+    } else if (mode === 'week') {
+      const we = new Date(weekStart); we.setDate(we.getDate() + 6); we.setHours(23,59,59);
+      timeMin = new Date(weekStart).toISOString();
+      timeMax = we.toISOString();
+    } else {
+      timeMin = new Date(year, month, 1).toISOString();
+      timeMax = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+    }
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(
+        `/api/google/events?userId=${user.id}&timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      if (res.ok) {
+        const { events } = await res.json();
+        setGcalEvents(events || []);
+      }
+    } catch {}
+  }, [user, mode, year, month, weekStart]);
+
   useEffect(() => { loadTasks(); }, [loadTasks]);
+  useEffect(() => { loadGcalEvents(); }, [loadGcalEvents]);
 
   // Open day panel from query param
   useEffect(() => {
@@ -109,7 +144,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="cal-layout" style={{ display: 'flex', gap: 20, height: '100%', minHeight: 0 }}>
+    <div className="cal-layout" style={{ display: 'flex', height: '100%', minHeight: 0, position: 'relative' }}>
       {/* 메인 캘린더 영역 */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <div className="view-header" style={{ marginBottom: 16 }}>
@@ -142,10 +177,10 @@ export default function CalendarPage() {
 
         <div className="card" style={{ flex: 1, padding: 0, overflow: 'auto' }}>
           {mode === 'month' && (
-            <MonthView year={year} month={month} tasks={tasks} todayStr={todayStr} onDayClick={openDayPanel} />
+            <MonthView year={year} month={month} tasks={tasks} gcalEvents={gcalEvents} todayStr={todayStr} onDayClick={openDayPanel} />
           )}
           {mode === 'week' && (
-            <WeekView weekStart={weekStart} tasks={tasks} todayStr={todayStr} onDayClick={openDayPanel} />
+            <WeekView weekStart={weekStart} tasks={tasks} gcalEvents={gcalEvents} todayStr={todayStr} onDayClick={openDayPanel} />
           )}
           {mode === 'year' && (
             <YearView year={year} tasks={tasks} todayStr={todayStr} onMonthClick={m => { setMode('month'); setMonth(m); }} />
@@ -155,7 +190,7 @@ export default function CalendarPage() {
 
       {/* 날짜 패널 */}
       {dayPanel && (
-        <div className="card cal-day-panel" style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="card cal-day-panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)' }}>
               {dayPanel}
@@ -169,7 +204,30 @@ export default function CalendarPage() {
               </button>
             </div>
           </div>
-          {dayTasks.length === 0 ? (
+          {/* Google 캘린더 이벤트 */}
+          {gcalEvents.filter(e => e.date === dayPanel).map(e => (
+            <a
+              key={e.id}
+              href={e.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 10px', borderRadius: 'var(--radius-sm)',
+                background: 'var(--bg)', textDecoration: 'none',
+                borderLeft: `3px solid ${e.color || '#4285f4'}`,
+              }}
+            >
+              <span style={{
+                fontSize: '0.65rem', fontWeight: 700, color: '#fff',
+                background: '#4285f4', borderRadius: 3, padding: '1px 4px', flexShrink: 0,
+              }}>G</span>
+              <span style={{ flex: 1, fontSize: '0.85rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {e.title}
+              </span>
+            </a>
+          ))}
+          {dayTasks.length === 0 && gcalEvents.filter(e => e.date === dayPanel).length === 0 ? (
             <p style={{ color: 'var(--text-sub)', fontSize: '0.85rem', textAlign: 'center', padding: '16px 0' }}>
               할일이 없습니다
             </p>
@@ -227,7 +285,7 @@ export default function CalendarPage() {
 }
 
 /* ── 월 뷰 ── */
-function MonthView({ year, month, tasks, todayStr, onDayClick }) {
+function MonthView({ year, month, tasks, gcalEvents, todayStr, onDayClick }) {
   const firstDay    = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const prevDays    = new Date(year, month, 0).getDate();
@@ -242,6 +300,12 @@ function MonthView({ year, month, tasks, todayStr, onDayClick }) {
     if (spanIds.has(t.id)) return;
     if (!taskMap[t.date]) taskMap[t.date] = [];
     taskMap[t.date].push(t);
+  });
+
+  const gcalMap = {};
+  (gcalEvents || []).forEach(e => {
+    if (!gcalMap[e.date]) gcalMap[e.date] = [];
+    gcalMap[e.date].push(e);
   });
 
   const cells = [];
@@ -287,7 +351,7 @@ function MonthView({ year, month, tasks, todayStr, onDayClick }) {
 
         return (
           <div key={wi} style={{ position: 'relative' }}>
-            {/* Span bars rendered as absolute overlay */}
+            {/* Span bars rendered as absolute overlay — start at 30px (below date circle) */}
             {weekSpans.map((span, si) => {
               const startIdx = Math.max(0, week.findIndex(c => c.ds && c.ds >= span.date));
               const endIdx   = Math.min(6, [...week].reverse().findIndex(c => c.ds && c.ds <= span.deadline));
@@ -300,7 +364,7 @@ function MonthView({ year, month, tasks, todayStr, onDayClick }) {
               return (
                 <div key={span.id} style={{
                   position: 'absolute',
-                  top: `${4 + si * 18}px`,
+                  top: `${30 + si * 18}px`,
                   left, width, zIndex: 2, pointerEvents: 'none',
                   height: 16,
                   background: span.color || 'var(--indigo-500)',
@@ -323,12 +387,13 @@ function MonthView({ year, month, tasks, todayStr, onDayClick }) {
             {/* Date cells */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
               {week.map((cell, ci) => {
-                const globalIdx = wi * 7 + ci;
-                const cellTasks = cell.ds ? (taskMap[cell.ds] || []) : [];
-                const isToday   = cell.ds === todayStr;
-                // top padding to make room for span bars
+                const globalIdx  = wi * 7 + ci;
+                const cellTasks  = cell.ds ? (taskMap[cell.ds] || []) : [];
+                const cellGcal   = cell.ds ? (gcalMap[cell.ds] || []) : [];
+                const isToday    = cell.ds === todayStr;
                 const spanCount = weekSpans.length;
-                const topPad    = spanCount > 0 ? `${4 + spanCount * 18 + 4}px` : '6px';
+                // date circle margin pushes task chips below span bars
+                const dateMarginBottom = spanCount > 0 ? `${spanCount * 18 + 4}px` : '4px';
 
                 return (
                   <div
@@ -336,7 +401,7 @@ function MonthView({ year, month, tasks, todayStr, onDayClick }) {
                     onClick={() => cell.ds && onDayClick(cell.ds)}
                     style={{
                       minHeight: 90,
-                      paddingTop: topPad, paddingLeft: 8, paddingRight: 8, paddingBottom: 6,
+                      paddingTop: 6, paddingLeft: 8, paddingRight: 8, paddingBottom: 6,
                       cursor: cell.ds ? 'pointer' : 'default',
                       borderRight: (globalIdx + 1) % 7 !== 0 ? '1px solid var(--border)' : 'none',
                       borderBottom: '1px solid var(--border)',
@@ -346,13 +411,14 @@ function MonthView({ year, month, tasks, todayStr, onDayClick }) {
                     onMouseEnter={e => { if (cell.ds) e.currentTarget.style.background = 'var(--indigo-50)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = cell.other ? 'rgba(0,0,0,0.02)' : 'var(--surface)'; }}
                   >
+                    {/* Date number — always at the top of the cell */}
                     <div style={{
                       width: 24, height: 24, borderRadius: '50%',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '0.78rem', fontWeight: isToday ? 700 : 400,
                       background: isToday ? 'var(--indigo-600)' : 'transparent',
                       color: isToday ? '#fff' : cell.other ? 'var(--text-sub)' : 'var(--text)',
-                      marginBottom: 4,
+                      marginBottom: dateMarginBottom,
                     }}>{cell.d}</div>
 
                     {cellTasks.slice(0, 2).map(t => (
@@ -372,6 +438,21 @@ function MonthView({ year, month, tasks, todayStr, onDayClick }) {
                     {cellTasks.length > 2 && (
                       <div style={{ fontSize: '0.68rem', color: 'var(--text-sub)' }}>+{cellTasks.length - 2}</div>
                     )}
+                    {cellGcal.slice(0, 2).map(e => (
+                      <div key={e.id} style={{
+                        fontSize: '0.68rem', padding: '1px 4px', borderRadius: 2, marginBottom: 2,
+                        borderLeft: `3px solid ${e.color || '#4285f4'}`,
+                        color: 'var(--text)',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        lineHeight: '1.5', display: 'flex', alignItems: 'center', gap: 3,
+                      }}>
+                        <span style={{ fontSize: '0.55rem', fontWeight: 700, color: '#4285f4', flexShrink: 0 }}>G</span>
+                        {e.title}
+                      </div>
+                    ))}
+                    {cellGcal.length > 2 && (
+                      <div style={{ fontSize: '0.68rem', color: '#4285f4' }}>+{cellGcal.length - 2} G</div>
+                    )}
                   </div>
                 );
               })}
@@ -384,13 +465,15 @@ function MonthView({ year, month, tasks, todayStr, onDayClick }) {
 }
 
 /* ── 주 뷰 ── */
-function WeekView({ weekStart, tasks, todayStr, onDayClick }) {
+function WeekView({ weekStart, tasks, gcalEvents, todayStr, onDayClick }) {
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart); d.setDate(d.getDate() + i);
     return { d, ds: toDateStr(d) };
   });
   const taskMap = {};
   tasks.forEach(t => { if (!taskMap[t.date]) taskMap[t.date] = []; taskMap[t.date].push(t); });
+  const gcalMap = {};
+  (gcalEvents || []).forEach(e => { if (!gcalMap[e.date]) gcalMap[e.date] = []; gcalMap[e.date].push(e); });
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', minHeight: 400 }}>
@@ -426,6 +509,17 @@ function WeekView({ weekStart, tasks, todayStr, onDayClick }) {
                   textDecoration: t.completed ? 'line-through' : 'none',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>{t.title}</div>
+              ))}
+              {(gcalMap[ds] || []).map(e => (
+                <div key={e.id} style={{
+                  fontSize: '0.75rem', padding: '3px 6px', borderRadius: 4, marginBottom: 3,
+                  background: e.color || '#4285f4', color: '#fff',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                }}>
+                  <span style={{ fontSize: '0.6rem', fontWeight: 700, opacity: 0.85 }}>G</span>
+                  {e.title}
+                </div>
               ))}
             </div>
           </div>

@@ -1,13 +1,14 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/lib/contexts/AuthContext';
 
-const STORAGE_KEY = 'ts_memo_v2';
-
-function load() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+// user-specific key so memos are never shared between accounts
+function storageKey(userId) { return `ts_memo_v2_${userId}`; }
+function load(userId) {
+  try { return JSON.parse(localStorage.getItem(storageKey(userId)) || '[]'); } catch { return []; }
 }
-function save(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+function save(userId, data) {
+  localStorage.setItem(storageKey(userId), JSON.stringify(data));
 }
 function now() { return new Date().toISOString(); }
 function fmtDate(iso) {
@@ -37,6 +38,7 @@ const TOOLBAR = [
 ];
 
 export default function MemoPage() {
+  const { user } = useAuth();
   const [memos, setMemos]       = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [title, setTitle]       = useState('');
@@ -51,10 +53,11 @@ export default function MemoPage() {
   const findRef     = useRef(null);
 
   useEffect(() => {
-    const data = load();
+    if (!user) return;
+    const data = load(user.id);
     setMemos(data);
     if (data.length) openMemo(data[0], data);
-  }, []);
+  }, [user]);
 
   // Ctrl+F shortcut
   useEffect(() => {
@@ -77,27 +80,29 @@ export default function MemoPage() {
   }
 
   function autosave(nextTitle, nextContent) {
-    if (!activeId) return;
+    if (!activeId || !user) return;
     setMemos(prev => {
       const next = prev.map(m =>
         m.id === activeId ? { ...m, title: nextTitle, content: nextContent, updatedAt: now() } : m
       );
-      save(next);
+      save(user.id, next);
       return next;
     });
   }
 
   function addMemo() {
+    if (!user) return;
     const m = { id: Date.now(), title: '새 메모', content: '', createdAt: now(), updatedAt: now() };
-    setMemos(prev => { const next = [m, ...prev]; save(next); return next; });
+    setMemos(prev => { const next = [m, ...prev]; save(user.id, next); return next; });
     setActiveId(m.id); setTitle(m.title); setContent(m.content);
     setSidebarOpen(false);
   }
 
   function deleteMemo(id) {
+    if (!user) return;
     setMemos(prev => {
       const next = prev.filter(m => m.id !== id);
-      save(next);
+      save(user.id, next);
       if (activeId === id) {
         if (next.length) { setActiveId(next[0].id); setTitle(next[0].title); setContent(next[0].content); }
         else { setActiveId(null); setTitle(''); setContent(''); }
@@ -251,7 +256,7 @@ export default function MemoPage() {
                 { mode: 'preview', icon: 'fa-eye',        label: '보기' },
               ].map(({ mode, icon, label }) => (
                 <button key={mode} title={label}
-                  className={`memo-view-btn${viewMode === mode ? ' active' : ''}`}
+                  className={`memo-view-btn${viewMode === mode ? ' active' : ''}${mode === 'split' ? ' memo-split-btn' : ''}`}
                   onClick={() => setViewMode(mode)}
                 >
                   <i className={`fas ${icon}`} />

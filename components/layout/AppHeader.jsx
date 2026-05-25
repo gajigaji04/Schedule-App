@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { getTasksByUser } from '@/models/taskModel';
+import { loadUserColor } from '@/lib/utils/themeColor';
 
 function toDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -25,6 +26,11 @@ export default function AppHeader({ onToggleSidebar }) {
   const notifRef  = useRef(null);
 
   // 마감 알림 로드 (7일 이내 마감 + 기한 초과 미완료)
+  // 유저가 바뀔 때 해당 유저의 테마 색상 적용
+  useEffect(() => {
+    if (user?.id) loadUserColor(user.id);
+  }, [user?.id]);
+
   const loadDeadlines = useCallback(async () => {
     if (!user) return;
     const tasks = await getTasksByUser(user.id);

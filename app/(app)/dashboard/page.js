@@ -14,10 +14,14 @@ function toDateStr(d) {
   return `${y}-${m}-${day}`;
 }
 
-function getGreeting(h) {
-  if (h < 12) return '좋은 아침이에요';
-  if (h < 18) return '좋은 오후에요';
-  return '좋은 저녁이에요';
+function getGreeting(h, day) {
+  const weekend = day === 0 || day === 6;
+  if (h < 6)  return '늦은 밤이네요, 무리하지 마세요';
+  if (h < 12) return weekend ? '주말 아침이에요, 여유롭게 시작하세요' : '좋은 아침이에요, 오늘도 화이팅이에요';
+  if (h < 14) return weekend ? '주말 점심이에요, 맛있는 식사 하세요' : '점심 시간이에요, 잠깐 쉬어가세요';
+  if (h < 18) return weekend ? '주말 오후에요, 편하게 쉬세요' : '좋은 오후에요, 집중력을 높여봐요';
+  if (h < 21) return weekend ? '주말 저녁이에요, 마무리를 즐기세요' : '저녁 시간이에요, 오늘 하루 수고했어요';
+  return '편안한 밤 되세요';
 }
 
 export default function DashboardPage() {
@@ -127,7 +131,7 @@ export default function DashboardPage() {
       <div className="view-header">
         <div>
           <h2 id="dash-greeting">
-            {getGreeting(now.getHours())}, {user?.name || '사용자'}님!
+            {getGreeting(now.getHours(), now.getDay())}, {user?.name || '사용자'}님!
           </h2>
           <p className="view-sub">
             {now.getFullYear()}년 {now.getMonth() + 1}월 {now.getDate()}일 {DAYS[now.getDay()]}요일
