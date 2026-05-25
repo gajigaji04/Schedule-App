@@ -15,12 +15,12 @@
 
 ## 기술 스택
 
-| 분류 | 기술 |
-|------|------|
-| 프레임워크 | Next.js 16 (App Router) |
-| 스타일 | Tailwind CSS v4 |
+| 분류        | 기술                                                  |
+| ----------- | ----------------------------------------------------- |
+| 프레임워크  | Next.js 16 (App Router)                               |
+| 스타일      | Tailwind CSS v4                                       |
 | 백엔드/인증 | Supabase (OTP 이메일 · Google · GitHub · Kakao OAuth) |
-| 아이콘 | Font Awesome 6.5 |
+| 아이콘      | Font Awesome 6.5                                      |
 
 ## 시작하기
 
@@ -76,4 +76,4 @@ models/           # DB 쿼리 함수 (task, team, user)
 
 ## 라이선스
 
-개인·학습 목적으로 자유롭게 사용 가능합니다.
+MIT 라이선스에 따라 사용 가능합니다.
