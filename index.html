@@ -271,6 +271,9 @@
         </nav>
       </aside>
 
+      <!-- Mobile sidebar overlay backdrop -->
+      <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
       <!-- MAIN CONTENT -->
       <main id="main-content" class="app-main">
         <!-- DASHBOARD VIEW -->
@@ -1728,6 +1731,25 @@
       </div>
       <div id="day-panel-tasks" class="task-list"></div>
     </div>
+
+    <!-- ===== MOBILE BOTTOM NAV ===== -->
+    <nav id="bottom-nav" class="bottom-nav">
+      <div class="nav-item bnav-item" data-view="dashboard">
+        <i class="fas fa-home"></i><span>홈</span>
+      </div>
+      <div class="nav-item bnav-item" data-view="calendar">
+        <i class="fas fa-calendar-alt"></i><span>캘린더</span>
+      </div>
+      <div class="nav-item bnav-item" data-view="tasks">
+        <i class="fas fa-tasks"></i><span>할일</span>
+      </div>
+      <div class="nav-item bnav-item" data-view="teams">
+        <i class="fas fa-users"></i><span>팀</span>
+      </div>
+      <div class="nav-item bnav-item" data-view="settings">
+        <i class="fas fa-cog"></i><span>설정</span>
+      </div>
+    </nav>
 
     <!-- ===== SCRIPTS (order matters — models → views → controllers → app) ===== -->
     <script src="js/services/ThemeService.js"></script>

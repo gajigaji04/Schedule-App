@@ -1568,7 +1568,8 @@ body.dark .week-col-hdr.today { background: rgba(99,102,241,.18); }
 .login-page:not(.hidden) ~ .ai-fab,
 .login-page:not(.hidden) ~ .ai-panel,
 .login-page:not(.hidden) ~ .chat-fab,
-.login-page:not(.hidden) ~ .chat-panel { display: none !important; }
+.login-page:not(.hidden) ~ .chat-panel,
+.login-page:not(.hidden) ~ .bottom-nav { display: none !important; }
 
 /* ---- Left brand panel ---- */
 .lp-left {
@@ -4022,3 +4023,335 @@ body.dark .holiday-cell { background: rgba(239,68,68,.07); }
 /* Year grid — holiday cell marker */
 .ymg-cell.holiday-cell { background: rgba(239,68,68,.08); }
 body.dark .ymg-cell.holiday-cell { background: rgba(239,68,68,.12); }
+
+/* ============================================================
+   MOBILE SIDEBAR OVERLAY BACKDROP
+   ============================================================ */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 499;
+  backdrop-filter: blur(2px);
+}
+.sidebar-overlay.visible { display: block; }
+
+/* ============================================================
+   BOTTOM NAVIGATION (mobile only — hidden on desktop)
+   ============================================================ */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 60px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 400;
+  padding: 0 4px;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -2px 10px rgba(0,0,0,.07);
+}
+
+/* Bottom nav items override the sidebar .nav-item defaults */
+.bottom-nav .nav-item {
+  display: flex;  /* override hidden state from 768px query */
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 4px 4px;
+  justify-content: center;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--slate-500);
+  transition: color var(--transition), background var(--transition);
+  white-space: nowrap;
+  overflow: visible;
+  min-width: 0;
+}
+.bottom-nav .nav-item i {
+  font-size: 1.15rem;
+  width: auto;
+  color: var(--slate-400);
+  transition: color var(--transition);
+}
+.bottom-nav .nav-item span {
+  display: block;  /* override display:none from 768px query */
+  font-size: 0.62rem;
+  font-weight: 500;
+}
+.bottom-nav .nav-item.active {
+  color: var(--indigo-600);
+  background: var(--indigo-50);
+}
+.bottom-nav .nav-item.active i { color: var(--indigo-600); }
+.bottom-nav .nav-item:hover { background: var(--bg); color: var(--text); }
+.bottom-nav .nav-item:hover i { color: var(--text); }
+
+body.dark .bottom-nav { background: #1e293b; border-color: #334155; box-shadow: 0 -2px 10px rgba(0,0,0,.3); }
+body.dark .bottom-nav .nav-item { color: var(--slate-400); }
+body.dark .bottom-nav .nav-item i { color: var(--slate-400); }
+body.dark .bottom-nav .nav-item.active { color: #818cf8; background: rgba(99,102,241,.15); }
+body.dark .bottom-nav .nav-item.active i { color: #818cf8; }
+body.dark .bottom-nav .nav-item:hover { background: #0f172a; color: #f1f5f9; }
+body.dark .bottom-nav .nav-item:hover i { color: #f1f5f9; }
+
+/* ============================================================
+   RESPONSIVE — MOBILE (≤ 480px)
+   ============================================================ */
+@media (max-width: 480px) {
+
+  /* ── Show bottom nav ──────────────────────────────────────── */
+  .bottom-nav { display: flex; }
+
+  /* ── App grid — remove sidebar column ────────────────────── */
+  .app,
+  .app.sidebar-collapsed {
+    grid-template-columns: 1fr;
+    grid-template-areas: "header" "main";
+  }
+
+  /* ── Sidebar — slide-in drawer ────────────────────────────── */
+  .app-sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    height: 100dvh;
+    width: 240px;
+    z-index: 500;
+    transition: left 220ms ease;
+    box-shadow: none;
+  }
+  .app-sidebar.mobile-open {
+    left: 0;
+    box-shadow: 4px 0 24px rgba(0,0,0,.35);
+  }
+
+  /* ── Header ────────────────────────────────────────────────── */
+  .app-header { padding: 0 12px; gap: 8px; }
+  .header-left { gap: 6px; }
+  .app-brand span { display: none; }
+  .header-center {
+    display: block;
+    flex: 1;
+    max-width: none;
+    margin: 0;
+  }
+  .search-bar { padding: 6px 10px; }
+  .team-pill { display: none; }
+  .user-text { display: none; }
+  .user-chip { padding: 4px 6px; gap: 0; border: none; background: none; }
+  .user-chip .fa-chevron-down { display: none; }
+
+  /* ── Main content ─────────────────────────────────────────── */
+  .app-main { padding: 14px 12px 76px; }
+
+  /* ── View headers ─────────────────────────────────────────── */
+  .view-header { flex-wrap: wrap; gap: 10px; }
+  .view-header h2 { font-size: 1.2rem; }
+
+  /* ── Dashboard stats ──────────────────────────────────────── */
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-card { padding: 12px; gap: 10px; }
+  .stat-num { font-size: 1.3rem; }
+  .stat-icon { width: 38px; height: 38px; font-size: 1rem; }
+
+  /* ── Productivity row ─────────────────────────────────────── */
+  .productivity-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .productivity-row .prod-card:first-child { grid-column: 1 / -1; }
+  .prod-num { font-size: 1.15rem; }
+
+  /* ── Day panel — full width ───────────────────────────────── */
+  .day-panel {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    bottom: 60px; /* above bottom nav */
+  }
+
+  /* ── Chat & AI panels — bottom sheet ─────────────────────── */
+  .chat-panel {
+    width: 100%;
+    height: 88dvh;
+    bottom: 60px;
+    right: 0;
+    left: 0;
+    border-radius: 20px 20px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+  .ai-panel {
+    width: 100%;
+    height: 88dvh;
+    bottom: 60px;
+    right: 0;
+    left: 0;
+    border-radius: 20px 20px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  /* ── FABs — above bottom nav ──────────────────────────────── */
+  .chat-fab { bottom: 72px; right: 14px; width: 48px; height: 48px; font-size: 1.1rem; }
+  .ai-fab   { bottom: 130px; right: 14px; width: 44px; height: 44px; font-size: 1rem; }
+
+  /* ── Modals — bottom sheet ────────────────────────────────── */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal-card {
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
+    animation: slideUpModal .22s ease;
+    max-height: 92dvh;
+  }
+  .modal-card--wide {
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+  }
+  @keyframes slideUpModal {
+    from { transform: translateY(24px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ── Calendar: unified header/cell sizes ──────────────────── */
+
+  /* 공통 요일 헤더: 월간·주간 모두 동일한 높이·글꼴·배경 */
+  .cal-hdr-cell,
+  .week-col-hdr {
+    padding: 7px 2px 6px;
+    font-size: 0;        /* 내부 span이 크기를 결정 */
+  }
+  .cal-hdr-cell { font-size: 0.72rem; }  /* cal-hdr-cell은 텍스트 직접 */
+  .week-dow { font-size: 0.72rem; margin-bottom: 2px; }
+
+  /* 날짜 번호 원: 월간 cell-num ↔ 주간 week-date-num 통일 */
+  .cell-num,
+  .week-date-num {
+    width: 22px; height: 22px;
+    font-size: 0.74rem;
+  }
+
+  /* 월간 셀 */
+  .full-cal { border-radius: var(--radius-sm); }
+  .full-cell {
+    min-height: 62px;
+    padding: 4px 3px 2px;
+  }
+  .cell-add-btn { display: none; }
+  .full-task-dot-row { gap: 3px; margin-top: 2px; }
+
+  /* 주간 셀 — 월간 셀과 동일 높이 */
+  .week-grid {
+    min-height: 0;
+    font-size: 0.72rem;
+  }
+  .week-col-body {
+    padding: 4px 2px 3px;
+    gap: 2px;
+    min-height: 60px;    /* full-cell min-height - header height ≈ 일치 */
+  }
+  .week-task {
+    font-size: 0.62rem;
+    padding: 2px 3px;
+  }
+  .week-add-btn { display: none; }
+
+  /* calendar toolbar — compact + wrap */
+  .cal-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .cal-view-toggle { flex: 1; }
+  .cal-vt-btn { padding: 6px 10px; font-size: 0.78rem; flex: 1; text-align: center; }
+  #cal-today { font-size: 0.8rem; padding: 6px 10px; }
+  .cal-nav { gap: 6px; }
+  .cal-nav button { width: 28px; height: 28px; font-size: 0.75rem; }
+  .cal-nav span { font-size: 0.88rem; min-width: 80px; text-align: center; }
+
+  /* ── Settings ─────────────────────────────────────────────── */
+  .settings-wrap { grid-template-columns: 1fr; }
+
+  /* ── Calculator ───────────────────────────────────────────── */
+  .calc-grid { grid-template-columns: 1fr; }
+  .calc-tab span { display: none; }
+
+  /* ── Tasks split ──────────────────────────────────────────── */
+  .tasks-split { grid-template-columns: 1fr; gap: 12px; }
+  .tasks-split-checklist { position: static; }
+
+  /* ── Timer ────────────────────────────────────────────────── */
+  .timer-display { font-size: 3rem; }
+
+  /* ── Memo board ───────────────────────────────────────────── */
+  .memo-board { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+
+  /* ── Dash grid ────────────────────────────────────────────── */
+  .dash-grid { grid-template-columns: 1fr; }
+
+  /* ── Login page — full-screen, no card ───────────────────── */
+  .lp-left { display: none; }
+  .login-page {
+    grid-template-columns: 1fr;
+    display: flex;           /* flex instead of grid */
+    overflow: hidden;
+  }
+  .lp-right {
+    flex: 1;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
+    overflow-y: hidden;   /* lp-right itself doesn't scroll */
+    background: #fff;
+  }
+  /* Dark brand header strip — always visible at the top */
+  .lp-right::before {
+    content: '';
+    display: block;
+    flex-shrink: 0;
+    height: 30dvh;
+    min-height: 156px;
+    background: linear-gradient(145deg, #312e81 0%, #3730a3 55%, #1e1b4b 100%);
+  }
+  /* Form area: flex-1, scrollable when content is tall */
+  .lp-form-wrap {
+    flex: 1;
+    min-height: 0;
+    max-width: 100%;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 28px 24px calc(36px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    max-height: none;
+  }
+  /* Logo centered, brand color */
+  .lp-form-logo {
+    justify-content: center;
+    margin-bottom: 20px;
+    margin-top: -4px;
+  }
+  .lp-form-logo i { color: var(--indigo-600); }
+  .lp-form-title { font-size: 1.5rem; }
+  .lp-form-sub   { margin-bottom: 20px; }
+  /* Touch-friendly inputs & buttons */
+  .form-group input,
+  .form-group select { min-height: 46px; padding: 0 12px; }
+  .btn-primary.btn-full { min-height: 48px; font-size: 0.95rem; }
+  .btn-ghost.btn-full   { min-height: 44px; }
+  .social-btn-grid { gap: 8px; }
+  .btn-social { padding: 14px 6px; font-size: 0.8rem; }
+  .otp-hint { font-size: 0.82rem; padding: 10px 12px; }
+  /* Dark mode */
+  body.dark .lp-right { background: var(--slate-900); }
+  body.dark .lp-right::before { background: linear-gradient(145deg, #1e1b4b 0%, #312e81 100%); }
+
+  /* ── Scrollbar hide ───────────────────────────────────────── */
+  .app-main::-webkit-scrollbar { display: none; }
+  .app-main { scrollbar-width: none; }
+}

@@ -156,12 +156,30 @@ class AppController {
     });
   }
 
+  static #closeMobileSidebar() {
+    document.getElementById('sidebar').classList.remove('mobile-open');
+    document.getElementById('sidebar-overlay').classList.remove('visible');
+  }
+
   static #bindSidebar() {
     document.querySelectorAll('.nav-item[data-view]').forEach(item => {
-      item.addEventListener('click', () => this.navigateTo(item.dataset.view));
+      item.addEventListener('click', () => {
+        this.navigateTo(item.dataset.view);
+        this.#closeMobileSidebar();
+      });
     });
+
     document.getElementById('sidebar-toggle').addEventListener('click', () => {
-      document.getElementById('app').classList.toggle('sidebar-collapsed');
+      if (window.innerWidth <= 480) {
+        const open = document.getElementById('sidebar').classList.toggle('mobile-open');
+        document.getElementById('sidebar-overlay').classList.toggle('visible', open);
+      } else {
+        document.getElementById('app').classList.toggle('sidebar-collapsed');
+      }
+    });
+
+    document.getElementById('sidebar-overlay').addEventListener('click', () => {
+      this.#closeMobileSidebar();
     });
   }
 
