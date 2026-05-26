@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { getTasksByDate, getTasksByUser, getTasksByDateRange, toggleComplete, createTask } from '@/models/taskModel';
+import { requestNotifPermission, checkUpcoming, dueTimeLabel } from '@/lib/taskNotifications';
 
 const DAYS = ['일','월','화','수','목','금','토'];
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -30,14 +31,16 @@ export default function DashboardPage() {
   const now = new Date();
   const todayStr = toDateStr(now);
 
-  const [todayTasks, setTodayTasks] = useState([]);
-  const [stats, setStats] = useState({ total: 0, done: 0, pending: 0, shared: 0 });
+  const [todayTasks, setTodayTasks]     = useState([]);
+  const [stats, setStats]               = useState({ total: 0, done: 0, pending: 0, shared: 0 });
   const [productivity, setProductivity] = useState({ rate: null, streak: 0, bestDay: null });
-  const [miniYear, setMiniYear] = useState(now.getFullYear());
-  const [miniMonth, setMiniMonth] = useState(now.getMonth());
-  const [miniTasks, setMiniTasks] = useState([]);
-  const [addTitle, setAddTitle] = useState('');
-  const [adding, setAdding] = useState(false);
+  const [miniYear, setMiniYear]         = useState(now.getFullYear());
+  const [miniMonth, setMiniMonth]       = useState(now.getMonth());
+  const [miniTasks, setMiniTasks]       = useState([]);
+  const [addTitle, setAddTitle]         = useState('');
+  const [adding, setAdding]             = useState(false);
+  // Ticks every 60 s — drives real-time countdown in TaskItem
+  const [tick, setTick]                 = useState(() => Date.now());
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -56,6 +59,20 @@ export default function DashboardPage() {
   }, [user, todayStr]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Request notification permission once, then check every 60 s
+  useEffect(() => {
+    requestNotifPermission();
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = Date.now();
+      setTick(now);
+      checkUpcoming(todayTasks, todayStr);
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [todayTasks, todayStr]);
 
   useEffect(() => {
     if (!user) return;
@@ -141,8 +158,8 @@ export default function DashboardPage() {
 
       {/* 통계 카드 4개 */}
       <div className="stats-row">
-        <StatCard icon="fas fa-list-check" iconColor="indigo" num={stats.total}   label="오늘 할일" />
-        <StatCard icon="fas fa-circle-check" iconColor="green" num={stats.done}   label="완료" />
+        <StatCard icon="fas fa-list-check" iconColor="indigo" num={stats.total}    label="오늘 할일" />
+        <StatCard icon="fas fa-circle-check" iconColor="green" num={stats.done}    label="완료" />
         <StatCard icon="fas fa-clock"        iconColor="amber" num={stats.pending} label="미완료" />
         <StatCard icon="fas fa-users"        iconColor="purple" num={stats.shared} label="팀 공유" />
       </div>
@@ -205,7 +222,13 @@ export default function DashboardPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {todayTasks.map(t => (
-                <TaskItem key={t.id} task={t} onToggle={() => handleToggle(t.id, t.completed)} />
+                <TaskItem
+                  key={t.id}
+                  task={t}
+                  onToggle={() => handleToggle(t.id, t.completed)}
+                  nowMs={tick}
+                  todayStr={todayStr}
+                />
               ))}
             </div>
           )}
@@ -298,12 +321,15 @@ function ProdCard({ icon, iconColor, num, label, bar }) {
   );
 }
 
-function TaskItem({ task, onToggle }) {
+function TaskItem({ task, onToggle, nowMs, todayStr }) {
+  const lbl = dueTimeLabel(task, todayStr, nowMs);
+
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '8px 12px', borderRadius: 'var(--radius-sm)',
       background: 'var(--bg)', border: '1px solid var(--border)',
+      borderLeft: task.color ? `3px solid ${task.color}` : '1px solid var(--border)',
     }}>
       <button
         onClick={onToggle}
@@ -317,15 +343,28 @@ function TaskItem({ task, onToggle }) {
       >
         {task.completed && <i className="fas fa-check" />}
       </button>
+
       <span style={{
         flex: 1, fontSize: '0.88rem', color: 'var(--text)',
         textDecoration: task.completed ? 'line-through' : 'none',
         opacity: task.completed ? 0.5 : 1,
+        minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
         {task.title}
       </span>
+
+      {lbl && (
+        <span style={{
+          fontSize: '0.72rem', color: lbl.color, fontWeight: 600,
+          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3,
+        }}>
+          <i className="fas fa-clock" />
+          {lbl.text}
+        </span>
+      )}
+
       {task.priority === 'high' && (
-        <span style={{ fontSize: '0.72rem', color: 'var(--red-500)', fontWeight: 600 }}>높음</span>
+        <span style={{ fontSize: '0.72rem', color: 'var(--red-500)', fontWeight: 600, flexShrink: 0 }}>높음</span>
       )}
     </div>
   );

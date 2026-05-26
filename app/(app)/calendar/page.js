@@ -10,6 +10,30 @@ import TaskModal from '@/components/task/TaskModal';
 const DAYS = ['일','월','화','수','목','금','토'];
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
+// 한국 공휴일 · 명절 (2024-2026)
+const KO_HOLIDAYS = {
+  // ── 2024 ──────────────────────────────────
+  '2024-01-01':'신정','2024-02-09':'설날 전날','2024-02-10':'설날','2024-02-11':'설날','2024-02-12':'대체공휴일',
+  '2024-03-01':'삼일절','2024-05-05':'어린이날','2024-05-06':'대체공휴일','2024-05-15':'부처님오신날',
+  '2024-06-06':'현충일','2024-08-15':'광복절',
+  '2024-09-16':'추석 전날','2024-09-17':'추석','2024-09-18':'추석',
+  '2024-10-03':'개천절','2024-10-09':'한글날','2024-12-25':'성탄절',
+  // ── 2025 ──────────────────────────────────
+  '2025-01-01':'신정','2025-01-28':'설날 전날','2025-01-29':'설날','2025-01-30':'설날','2025-02-03':'대체공휴일',
+  '2025-03-01':'삼일절','2025-03-03':'대체공휴일',
+  '2025-05-05':'어린이날·부처님오신날','2025-05-06':'대체공휴일',
+  '2025-06-06':'현충일','2025-08-15':'광복절',
+  '2025-10-03':'개천절','2025-10-05':'추석 전날','2025-10-06':'추석','2025-10-07':'추석',
+  '2025-10-08':'대체공휴일','2025-10-09':'한글날','2025-12-25':'성탄절',
+  // ── 2026 ──────────────────────────────────
+  '2026-01-01':'신정','2026-02-16':'설날 전날','2026-02-17':'설날','2026-02-18':'설날',
+  '2026-03-01':'삼일절','2026-03-02':'대체공휴일',
+  '2026-05-05':'어린이날','2026-05-24':'부처님오신날',
+  '2026-06-06':'현충일','2026-08-15':'광복절',
+  '2026-09-24':'추석 전날','2026-09-25':'추석','2026-09-26':'추석',
+  '2026-10-03':'개천절','2026-10-09':'한글날','2026-12-25':'성탄절',
+};
+
 function toDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
@@ -391,6 +415,7 @@ function MonthView({ year, month, tasks, gcalEvents, todayStr, onDayClick }) {
                 const cellTasks  = cell.ds ? (taskMap[cell.ds] || []) : [];
                 const cellGcal   = cell.ds ? (gcalMap[cell.ds] || []) : [];
                 const isToday    = cell.ds === todayStr;
+                const holiday    = cell.ds ? KO_HOLIDAYS[cell.ds] : null;
                 const spanCount = weekSpans.length;
                 // date circle margin pushes task chips below span bars
                 const dateMarginBottom = spanCount > 0 ? `${spanCount * 18 + 4}px` : '4px';
@@ -420,6 +445,16 @@ function MonthView({ year, month, tasks, gcalEvents, todayStr, onDayClick }) {
                       color: isToday ? '#fff' : cell.other ? 'var(--text-sub)' : 'var(--text)',
                       marginBottom: dateMarginBottom,
                     }}>{cell.d}</div>
+
+                    {holiday && (
+                      <div style={{
+                        fontSize: '0.6rem', color: '#dc2626', fontWeight: 600,
+                        marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        lineHeight: 1.3,
+                      }}>
+                        {holiday}
+                      </div>
+                    )}
 
                     {cellTasks.slice(0, 2).map(t => (
                       <div key={t.id} style={{
@@ -500,6 +535,11 @@ function WeekView({ weekStart, tasks, gcalEvents, todayStr, onDayClick }) {
                 background: isToday ? 'var(--indigo-600)' : 'transparent',
                 color: isToday ? '#fff' : 'var(--text)',
               }}>{d.getDate()}</div>
+              {KO_HOLIDAYS[ds] && (
+                <div style={{ fontSize: '0.58rem', color: '#dc2626', fontWeight: 600, marginTop: 2, lineHeight: 1.2 }}>
+                  {KO_HOLIDAYS[ds]}
+                </div>
+              )}
             </div>
             <div style={{ padding: '8px', minHeight: 200 }}>
               {dayTasks.map(t => (

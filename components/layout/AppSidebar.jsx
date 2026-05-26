@@ -23,6 +23,10 @@ export default function AppSidebar({ mobileOpen, onClose }) {
     <>
       <aside className={`app-sidebar${mobileOpen ? ' mobile-open' : ''}`}>
         <nav className="sidebar-nav">
+          <button className="sidebar-close-btn" onClick={onClose}>
+            <i className="fas fa-times" />
+            <span>닫기</span>
+          </button>
           <div className="nav-top">
             {NAV_ITEMS.map(item => (
               <Link

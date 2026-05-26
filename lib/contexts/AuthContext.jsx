@@ -5,13 +5,31 @@ import { upsertUser, getCurrentUser } from '@/models/userModel';
 
 const AuthContext = createContext(null);
 
+const CACHE_KEY = 'ts_user_v1';
+const CACHE_TTL = 12 * 60 * 60 * 1000; // 12시간
+
+function readCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { user, at } = JSON.parse(raw);
+    if (Date.now() - at > CACHE_TTL) { localStorage.removeItem(CACHE_KEY); return null; }
+    return user;
+  } catch { return null; }
+}
+function writeCache(user) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ user, at: Date.now() })); } catch {}
+}
+function clearCache() {
+  try { localStorage.removeItem(CACHE_KEY); } catch {}
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const cached = typeof window !== 'undefined' ? readCache() : null;
+  const [user, setUser] = useState(cached);
+  const [loading, setLoading] = useState(!cached); // 캐시 있으면 스피너 생략
 
   useEffect(() => {
-    // onAuthStateChange가 mount 직후 INITIAL_SESSION 이벤트를 즉시 발행하므로
-    // 이것 하나로 초기 상태 + 이후 변경 모두 처리한다.
     const { data: { subscription } } = db.auth.onAuthStateChange(async (_event, session) => {
       try {
         if (session?.user) {
@@ -21,18 +39,20 @@ export function AuthProvider({ children }) {
             su.user_metadata?.name ||
             su.email?.split('@')[0] ||
             '사용자';
-          // upsert 실패 시 기존 유저 조회로 폴백
           let dbUser = null;
           try {
             dbUser = await upsertUser(su.id, name, su.email);
           } catch {
             dbUser = await getCurrentUser();
           }
+          writeCache(dbUser);
           setUser(dbUser);
         } else {
+          clearCache();
           setUser(null);
         }
       } catch {
+        clearCache();
         setUser(null);
       } finally {
         setLoading(false);

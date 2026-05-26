@@ -130,8 +130,13 @@ export default function TasksPage() {
               }}>
                 {t.title}
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-sub)', marginTop: 2, display: 'flex', gap: 8 }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-sub)', marginTop: 2, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <span><i className="fas fa-calendar" style={{ marginRight: 4 }} />{t.date}</span>
+                {t.due_time && (
+                  <span style={{ color: 'var(--indigo-600)' }}>
+                    <i className="fas fa-clock" style={{ marginRight: 4 }} />{t.due_time}까지
+                  </span>
+                )}
                 {t.team_id && teamsMap[t.team_id] && (
                   <span><i className="fas fa-users" style={{ marginRight: 4 }} />{teamsMap[t.team_id].name}</span>
                 )}

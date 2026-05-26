@@ -28,6 +28,8 @@ export default function FloatingChatPanel() {
   const [memberList, setMemberList] = useState([]);
   const [inviteEmail, setInviteEmail] = useState('');
 
+  const [sendError, setSendError] = useState('');
+
   const channelRef = useRef(null);
   const msgsEndRef = useRef(null);
   const sentIds    = useRef(new Set());
@@ -119,15 +121,18 @@ export default function FloatingChatPanel() {
     sentIds.current.add(msgId);
     setMessages(prev => [...prev, optimistic]);
     try {
+      setSendError('');
       if (activeRoom.type === 'dm') {
         await Dm.sendMessage(activeRoom.id, user.id, user.name, activeRoom.dmUserId, content, msgId);
       } else {
         await Chat.sendMessage(activeRoom.id, user.id, user.name, content, msgId);
       }
-    } catch {
+    } catch (err) {
       sentIds.current.delete(msgId);
       setMessages(prev => prev.filter(m => m.id !== msgId));
       setInput(content);
+      setSendError(err.message || '전송 실패');
+      console.error('[Chat send error]', err);
     }
   }
 
@@ -233,10 +238,13 @@ export default function FloatingChatPanel() {
                 })}
                 <div ref={msgsEndRef} />
               </div>
+              {sendError && (
+                <div className="fp-send-error">{sendError}</div>
+              )}
               <div className="fp-input-row">
                 <input
                   type="text" className="fp-input" placeholder="메시지 입력..."
-                  value={input} onChange={e => setInput(e.target.value)}
+                  value={input} onChange={e => { setInput(e.target.value); setSendError(''); }}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                 />
                 <button className="fp-send-btn" onClick={sendMessage} disabled={!input.trim()}>

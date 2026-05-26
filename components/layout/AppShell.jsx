@@ -1,10 +1,12 @@
 'use client';
 import { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import AppHeader from './AppHeader';
 import AppSidebar from './AppSidebar';
 import BottomNav from './BottomNav';
-import FloatingChatPanel from '@/components/ui/FloatingChatPanel';
-import FloatingAIPanel from '@/components/ui/FloatingAIPanel';
+
+const FloatingChatPanel = dynamic(() => import('@/components/ui/FloatingChatPanel'), { ssr: false });
+const FloatingAIPanel   = dynamic(() => import('@/components/ui/FloatingAIPanel'),   { ssr: false });
 
 export default function AppShell({ children }) {
   const [collapsed, setCollapsed] = useState(false);   // desktop: sidebar collapsed

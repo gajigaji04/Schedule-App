@@ -120,8 +120,9 @@ export async function POST(request) {
   if (!checkRateLimit(authUser.id)) {
     return NextResponse.json({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' }, { status: 429 });
   }
-  if (!process.env.AI_API_KEY) {
-    return NextResponse.json({ error: 'AI_API_KEY not configured' }, { status: 503 });
+  const apiKey = process.env.AI_API_KEY;
+  if (!apiKey || /[^\x00-\xFF]/.test(apiKey)) {
+    return NextResponse.json({ error: 'AI_API_KEY가 올바르지 않습니다. .env.local을 확인하세요.' }, { status: 503 });
   }
 
   let systemPrompt = SYSTEM;
@@ -132,20 +133,25 @@ export async function POST(request) {
     } catch {}
   }
 
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': process.env.AI_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages,
-    }),
-  });
+  let resp;
+  try {
+    resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages,
+      }),
+    });
+  } catch (fetchErr) {
+    return NextResponse.json({ error: 'AI 서버 연결 실패: ' + fetchErr.message }, { status: 503 });
+  }
 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));

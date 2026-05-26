@@ -15,6 +15,7 @@ export default function TaskModal({ task, defaultDate, onClose, onSave }) {
   const [desc, setDesc]         = useState(task?.description || '');
   const [date, setDate]         = useState(task?.date || defaultDate || '');
   const [deadline, setDeadline] = useState(task?.deadline || '');
+  const [dueTime, setDueTime]   = useState(task?.due_time || '');
   const [priority, setPriority] = useState(task?.priority || 'medium');
   const [color, setColor]       = useState(task?.color || '');
   const [teamId, setTeamId]     = useState(task?.team_id || '');
@@ -32,7 +33,7 @@ export default function TaskModal({ task, defaultDate, onClose, onSave }) {
     setSaving(true);
     const data = {
       title: title.trim(), description: desc.trim() || null,
-      date, deadline: deadline || null, priority,
+      date, due_time: dueTime || null, deadline: deadline || null, priority,
       color: color || null, team_id: teamId || null,
       completed, user_id: user.id,
     };
@@ -80,10 +81,14 @@ export default function TaskModal({ task, defaultDate, onClose, onSave }) {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <div className="form-group">
               <label>날짜 *</label>
               <input type="date" value={date} onChange={e => setDate(e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label>마감 시간</label>
+              <input type="time" value={dueTime} onChange={e => setDueTime(e.target.value)} />
             </div>
             <div className="form-group">
               <label>마감일</label>

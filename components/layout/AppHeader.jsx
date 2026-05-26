@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { getTasksByUser } from '@/models/taskModel';
+import { getTasksByUser, getDeadlineTasks } from '@/models/taskModel';
 import { loadUserColor } from '@/lib/utils/themeColor';
 
 function toDateStr(d) {
@@ -33,7 +33,7 @@ export default function AppHeader({ onToggleSidebar }) {
 
   const loadDeadlines = useCallback(async () => {
     if (!user) return;
-    const tasks = await getTasksByUser(user.id);
+    const tasks = await getDeadlineTasks(user.id);
     const in7 = toDateStr(new Date(Date.now() + 7 * 86400000));
     const urgent = tasks.filter(t => {
       if (t.completed) return false;
@@ -173,6 +173,11 @@ export default function AppHeader({ onToggleSidebar }) {
                       <div style={{ fontSize: '0.78rem', color: lbl.color, fontWeight: 600 }}>
                         <i className="fas fa-flag" style={{ marginRight: 4 }} />
                         {lbl.text}
+                        {t.due_time && (
+                          <span style={{ marginLeft: 6, color: 'var(--indigo-600)' }}>
+                            <i className="fas fa-clock" style={{ marginRight: 3 }} />{t.due_time}까지
+                          </span>
+                        )}
                       </div>
                     </div>
                   );

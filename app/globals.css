@@ -851,6 +851,11 @@ body {
 }
 .fp-send-btn:hover    { background: var(--indigo-700); }
 .fp-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.fp-send-error {
+  padding: 5px 10px; margin: 0 8px 4px;
+  background: #fee2e2; border-radius: 4px;
+  font-size: 0.75rem; color: #dc2626;
+}
 
 /* Member management overlay */
 .fp-members-overlay {
@@ -1798,3 +1803,118 @@ body {
 .dark .md-code { background: #1e293b; border-color: #334155; }
 .dark .memo-find-input { background: #1e293b; border-color: #334155; }
 .dark .memo-find-btn { background: #1e293b; border-color: #334155; color: #94a3b8; }
+
+/* ============================================================
+   LOGIN PAGE: ALWAYS LIGHT (overrides .dark cascade)
+   ============================================================ */
+.login-page .lp-right              { background: #fff !important; }
+.login-page .lp-form-title         { color: #0f172a !important; }
+.login-page .lp-form-sub           { color: #64748b !important; }
+.login-page .login-divider::before,
+.login-page .login-divider::after  { background: #e2e8f0 !important; }
+.login-page .btn-social            { background: #fff !important; border-color: #e2e8f0 !important; color: #374151 !important; }
+.login-page .btn-github            { background: #24292e !important; border-color: #24292e !important; color: #fff !important; }
+.login-page .btn-kakao             { background: #fee500 !important; border-color: #fee500 !important; color: #191919 !important; }
+.login-page .form-group input      { background: #fff !important; border-color: #e2e8f0 !important; color: #0f172a !important; }
+.login-page .form-group label      { color: #374151 !important; }
+
+/* ============================================================
+   LOGIN: TERMS / PRIVACY MODAL
+   ============================================================ */
+.lp-terms-link {
+  background: none; border: none; padding: 0;
+  cursor: pointer; color: #6366f1; font-size: inherit;
+  text-decoration: underline; line-height: inherit;
+}
+.lp-terms-link:hover { color: #4f46e5; }
+
+.lp-modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.lp-modal {
+  background: #fff; border-radius: 12px;
+  width: 100%; max-width: 540px; max-height: 85vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  overflow: hidden;
+}
+.lp-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px 16px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+}
+.lp-modal-head h3 { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+.lp-modal-close {
+  background: none; border: none; cursor: pointer;
+  color: #94a3b8; font-size: 1rem; padding: 4px 8px;
+  border-radius: 6px; transition: background 150ms, color 150ms;
+}
+.lp-modal-close:hover { background: #f1f5f9; color: #475569; }
+.lp-modal-body {
+  flex: 1; overflow-y: auto; padding: 20px 24px;
+  -webkit-overflow-scrolling: touch;
+}
+.lp-modal-foot {
+  padding: 16px 24px; border-top: 1px solid #e2e8f0;
+  display: flex; justify-content: flex-end; flex-shrink: 0;
+}
+.lp-legal-content { color: #374151; line-height: 1.7; }
+.lp-legal-content h4 {
+  font-size: 0.95rem; font-weight: 700; color: #1e293b; margin: 20px 0 6px;
+}
+.lp-legal-content h4:first-of-type { margin-top: 8px; }
+.lp-legal-content p  { font-size: 0.875rem; margin-bottom: 8px; }
+.lp-legal-content ul { font-size: 0.875rem; padding-left: 20px; margin-bottom: 8px; }
+.lp-legal-content li { margin-bottom: 4px; }
+.lp-legal-notice {
+  background: #fff7ed; border: 1px solid #fed7aa;
+  color: #c2410c; padding: 10px 14px; border-radius: 6px;
+  font-size: 0.82rem; margin-bottom: 16px;
+}
+.lp-legal-date {
+  font-size: 0.8rem; color: #94a3b8;
+  margin-top: 20px; padding-top: 12px; border-top: 1px solid #e2e8f0;
+}
+@media (max-width: 480px) {
+  .lp-modal { max-height: 90vh; }
+  .lp-modal-body { padding: 16px; }
+  .lp-modal-head { padding-left: 16px; padding-right: 16px; }
+  .lp-modal-foot { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ============================================================
+   MEMO: NEW CARD-LIST PANEL
+   ============================================================ */
+.memo-list-search:focus { border-color: var(--indigo-400) !important; outline: none; }
+
+/* Touch devices: delete button always visible */
+@media (hover: none) {
+  .memo-card button[title="삭제"] { opacity: 1 !important; }
+}
+
+/* Dark mode for card-list panel */
+.dark .memo-list-search {
+  background: #1e293b !important; border-color: #334155 !important; color: #f1f5f9 !important;
+}
+.dark .memo-list-search::placeholder { color: #64748b !important; }
+.dark .memo-card.active { background: rgba(99,102,241,.15) !important; }
+
+/* ============================================================
+   MOBILE SIDEBAR: START BELOW HEADER (prevents top clip)
+   ============================================================ */
+@media (max-width: 480px) {
+  .app-sidebar { top: var(--header-h) !important; }
+  .sidebar-close-btn { display: flex !important; }
+}
+
+.sidebar-close-btn {
+  display: none;
+  align-items: center; gap: 8px;
+  width: 100%; padding: 12px 20px;
+  background: none; border: none; border-bottom: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-sidebar); cursor: pointer; font-size: 0.88rem;
+  text-align: left;
+}
+.sidebar-close-btn:hover { background: rgba(255,255,255,0.08); }
